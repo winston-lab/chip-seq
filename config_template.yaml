@@ -1,97 +1,86 @@
 ---
-# MNase-seq configuration file
+# ChIP-seq configuration file
 #
 # relative paths are okay
 #
-# provide paths to unassigned read1 and read2 fastq files (multiple files for each read are accepted)
+# provide paths to fastq files of unmatched reads (multiple files for each read are accepted)
 unmatched:
-    r1:
-        - ../demultiplex-mnase-fastq/fastq/unmodified/unmatched-unmodified.r1.fastq.gz
-    r2:
-        - ../demultiplex-mnase-fastq/fastq/unmodified/unmatched-unmodified.r2.fastq.gz
+    - ../demultiplex-spn1-chipseq-2/fastq/unmatched.fastq.gz
 
 genome:
-    annotation_workflow: ../build-annotations-cerevisiae/
+    annotation_workflow: /n/groups/winston/jc459/intragenic/build-annotations-cerevisiae/
 
 spike_in:
     name: Spom
     proportion: 0.1
-    fasta: ../genomefiles_cerevisiae/S_pombe.ASM294v2.fa
-    transcript_annotation: ../genome/annotations/S_pombe_alltranscripts-adjustedTSS.bed
+    fasta: /n/groups/winston/jc459/spt5/genome/S_pombe.ASM294v2.fa
+    # transcript_annotation: ../genome/annotations/S_pombe_alltranscripts-adjustedTSS.bed
 
-# sample metadata
-samples:
-    wt-1:  # [STRING] sample name. Do not use underscores ("_").
-        r1: ../demultiplex-mnase-fastq/fastq/wt-1.r1.fastq.gz  # path to read 1 fastq file
-        r2: ../demultiplex-mnase-fastq/fastq/wt-1.r2.fastq.gz  # path to read 2 fastq file
-        barcode: GCAGCCTC  # [STRING] sample barcode
-        group: wt  # [STRING] sample group tag. Do not use underscores ("_").
+factor: Spn1 #name of the factor being ChIP'ed
+
+input_samples:
+    non-depleted-untagged-input-3:
+        fastq: ../demultiplex-spn1-chipseq-2/fastq/non-depleted-untagged-input-3.fastq.gz
+        barcode: ATCACG # [STRING] sample barcode
+        group: non-depleted  # [STRING] sample group tag. Do not use underscores ("_").
         pass-qc: True  # [True|False] Should this sample be used for peakcalling, and included in "passing" heatmaps, metagenes, scatter plots, etc? Leave True for initial pipeline run, and rerun pipeline with False if a sample fails quality controls.
-        spikein: False  # [True|False] Does the sample have a spikein?
-    wt-2:
-        r1: ../demultiplex-mnase-fastq/fastq/wt-2.r1.fastq.gz
-        r2: ../demultiplex-mnase-fastq/fastq/wt-2.r2.fastq.gz
-        barcode: TCGCGTAC
-        group: wt
-        pass-qc: True
-        spikein: False
-    wt-3:
-        r1: ../demultiplex-mnase-fastq/fastq/wt-3.r1.fastq.gz
-        r2: ../demultiplex-mnase-fastq/fastq/wt-3.r2.fastq.gz
-        barcode: TATACCGT
-        group: wt
-        pass-qc: True
-        spikein: False
-    non-depleted-1:
-        r1: ../demultiplex-mnase-fastq/fastq/non-depleted-1.r1.fastq.gz
-        r2: ../demultiplex-mnase-fastq/fastq/non-depleted-1.r2.fastq.gz
-        barcode: ATATAGGA
+        spikein: True
+    non-depleted-untagged-input-4:
+        fastq: ../demultiplex-spn1-chipseq-2/fastq/non-depleted-untagged-input-4.fastq.gz
+        barcode: TTAGGC
         group: non-depleted
         pass-qc: True
-        spikein: False
-    non-depleted-2:
-        r1: ../demultiplex-mnase-fastq/fastq/non-depleted-2.r1.fastq.gz
-        r2: ../demultiplex-mnase-fastq/fastq/non-depleted-2.r2.fastq.gz
-        barcode: AACCGTGT
+        spikein: True
+    depleted-untagged-input-3:
+        fastq: ../demultiplex-spn1-chipseq-2/fastq/depleted-untagged-input-3.fastq.gz
+        barcode: CGATGT
+        group: depleted
+        pass-qc: True
+        spikein: True
+    depleted-untagged-input-4:
+        fastq: ../demultiplex-spn1-chipseq-2/fastq/depleted-untagged-input-4.fastq.gz
+        barcode: TGACCA
+        group: depleted
+        pass-qc: True
+        spikein: True
+
+# ChIP sample metadata
+chip_samples:
+    non-depleted-Spn1-IP-1:  # [STRING] sample name. Do not use underscores ("_").
+        fastq: ../demultiplex-spn1-chipseq-2/fastq/non-depleted-Spn1-IP-1.fastq.gz
+        barcode: ACAGTG # [STRING] sample barcode
+        group: non-depleted  # [STRING] sample group tag. Do not use underscores ("_").
+        input: non-depleted-untagged-input-3  # [STRING] name of the corresponding input samples. Must be present in the input_samples listed above.
+        pass-qc: True  # [True|False] Should this sample be used for peakcalling, and included in "passing" heatmaps, metagenes, scatter plots, etc? Leave True for initial pipeline run, and rerun pipeline with False if a sample fails quality controls.
+        spikein: True  # [True|True] Does the sample have a spikein?
+    non-depleted-Spn1-IP-2:
+        fastq: ../demultiplex-spn1-chipseq-2/fastq/non-depleted-Spn1-IP-2.fastq.gz
+        barcode: CAGATC
         group: non-depleted
+        input: non-depleted-untagged-input-4
         pass-qc: True
-        spikein: False
-    non-depleted-3:
-        r1: ../demultiplex-mnase-fastq/fastq/non-depleted-3.r1.fastq.gz
-        r2: ../demultiplex-mnase-fastq/fastq/non-depleted-3.r2.fastq.gz
-        barcode: CTCTGTCT
-        group: non-depleted
-        pass-qc: True
-        spikein: False
-    depleted-1:
-        r1: ../demultiplex-mnase-fastq/fastq/depleted-1.r1.fastq.gz
-        r2: ../demultiplex-mnase-fastq/fastq/depleted-1.r2.fastq.gz
-        barcode: CCATACAC
+        spikein: True
+    depleted-Spn1-IP-1:
+        fastq: ../demultiplex-spn1-chipseq-2/fastq/depleted-Spn1-IP-1.fastq.gz
+        barcode: GCCAAT
         group: depleted
+        input: depleted-untagged-input-3
         pass-qc: True
-        spikein: False
-    depleted-2:
-        r1: ../demultiplex-mnase-fastq/fastq/depleted-2.r1.fastq.gz
-        r2: ../demultiplex-mnase-fastq/fastq/depleted-2.r2.fastq.gz
-        barcode: GTCTACAT
+        spikein: True
+    depleted-Spn1-IP-2:
+        fastq: ../demultiplex-spn1-chipseq-2/fastq/depleted-Spn1-IP-2.fastq.gz
+        barcode: ACTTGA
         group: depleted
+        input: depleted-untagged-input-4
         pass-qc: True
-        spikein: False
-    depleted-3:
-        r1: ../demultiplex-mnase-fastq/fastq/depleted-3.r1.fastq.gz
-        r2: ../demultiplex-mnase-fastq/fastq/depleted-3.r2.fastq.gz
-        barcode: GAGTTAAC
-        group: depleted
-        pass-qc: True
-        spikein: False
+        spikein: True
 
 # comparisons to be made in differential occupancy,  data visualization, scatterplots, etc, etc.
 comparisons:
     libsizenorm:
         - depleted: non-depleted
-        - non-depleted: wt
     spikenorm:
-        # - depleted: non-depleted  # It's okay to have no comparisons if no spikein normalized comparisons are to be made
+        - depleted: non-depleted  # It's okay to have no comparisons if no spikein normalized comparisons are to be made
 
 # [INT] binsizes for scatterplots
 scatterplot_binsizes:
@@ -102,12 +91,19 @@ scatterplot_binsizes:
 cutadapt:
     qual_cutoff: 20  # [INT] quality cutoff for cutadapt 3' trimming
 
-# bowtie1 alignment settings
-bowtie:
-    index-path: ../genome/bowtie1_indexes  # directory to create index files, if they don't already exist in that directory
-    max_mismatch: 2  # [INT in (0,3)] number of mismatches allowed in mapping.
-    min_ins: 100  # [INT] minimum expected insert size
-    max_ins: 200  # [INT] maximum expected insert distance
+# bowtie2 alignment settings
+bowtie2:
+    index-path: /n/groups/winston/jc459/intragenic/genome/bowtie2_indexes # directory to create index files, if they don't already exist in that directory
+
+    minmapq : 5
+
+macs2:
+    bw: 160 # bandwidth for model building: set as sonication fragment size
+    llocal: 1000  # large region for calculating local lambda
+    slocal: 200  # small region for calculating local lambda
+    fdr: 0.05  # minimum cutoff to call significant regions
+    mfold_low: 5  #
+    mfold_high: 50
 
 # for smoothed coverage tracks
 smooth_bandwidth: 20  # [INT] bandwidth of Gaussian kernel used to smooth coverage

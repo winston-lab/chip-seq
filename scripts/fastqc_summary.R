@@ -206,22 +206,22 @@ main = function(seq_len_dist_in, per_tile_in, per_base_qual_in,
     #ggsave(kmer_out, plot=kmer_content_plot, width=35, height=2+5*nsamples, units="cm", limitsize=FALSE)
 }
 
-main(seq_len_dist_in = snakemake@input[["seq_length_dist"]],
-     per_tile_in = snakemake@input[["per_tile_qual"]],
+main(seq_len_dist_in = snakemake@input[["seq_len_dist"]],
+     per_tile_in = snakemake@input[["per_tile"]],
      per_base_qual_in = snakemake@input[["per_base_qual"]],
-     per_base_seq_in = snakemake@input[["per_base_seq_content"]],
+     per_base_seq_in = snakemake@input[["per_base_seq"]],
      per_base_n_in = snakemake@input[["per_base_n"]],
      per_seq_gc_in = snakemake@input[["per_seq_gc"]],
      per_seq_qual_in = snakemake@input[["per_seq_qual"]],
      adapter_content_in = snakemake@input[["adapter_content"]],
-     seq_dup_in = snakemake@input[["seq_duplication"]],
+     seq_dup_in = snakemake@input[["seq_dup"]],
      #kmer_in = snakemake@input[["kmer"]],
-     seq_len_dist_out = snakemake@output[["seq_length_dist"]],
-     per_tile_out = snakemake@output[["per_tile_qual"]],
+     seq_len_dist_out = snakemake@output[["seq_len_dist"]],
+     per_tile_out = snakemake@output[["per_tile"]],
      per_base_qual_out = snakemake@output[["per_base_qual"]],
-     per_base_seq_out = snakemake@output[["per_base_seq_content"]],
+     per_base_seq_out = snakemake@output[["per_base_seq"]],
      per_seq_gc_out = snakemake@output[["per_seq_gc"]],
      per_seq_qual_out = snakemake@output[["per_seq_qual"]],
      adapter_content_out = snakemake@output[["adapter_content"]],
-     seq_dup_out = snakemake@output[["seq_duplication"]])
+     seq_dup_out = snakemake@output[["seq_dup"]])
      #kmer_out = snakemake@output[["kmer"]])

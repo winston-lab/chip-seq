@@ -7,9 +7,9 @@ survival_plot = function(df, scalefactor, ylabel){
         # geom_hline(aes(yintercept=count/scalefactor), color="grey50", size=0.2) +
         geom_step(direction="vh", position=position_nudge(x=0.5),
                   color="#114477", size=0.8) +
-        scale_x_continuous(expand=c(0,0), breaks=2:4, name=NULL,
+        scale_x_continuous(expand=c(0,0), breaks=2:5, name=NULL,
                            labels=c("raw reads", "reads cleaned",
-                                    "aligned and paired")) +
+                                    "aligned", "uniquely aligned")) +
         scale_y_continuous(sec.axis=dup_axis(), name=ylabel) +
         facet_grid(sample~., switch="y") +
         theme_light() +
@@ -30,33 +30,33 @@ survival_plot = function(df, scalefactor, ylabel){
 main = function(in_table, surv_abs_out, surv_rel_out, loss_out){
     df = read_tsv(in_table) %>%
         mutate(sample=fct_inorder(sample, ordered=TRUE))
-    
+
     nsamples = nrow(df)
-    
-    loss = df %>% gather(step, count, -sample, factor_key=TRUE) %>% 
-        group_by(sample) %>% 
-        mutate(og_count = lag(count)) %>% 
-        filter(step != "raw") %>% 
+
+    loss = df %>% gather(step, count, -sample, factor_key=TRUE) %>%
+        group_by(sample) %>%
+        mutate(og_count = lag(count)) %>%
+        filter(step != "raw") %>%
         mutate(loss = (og_count-count)/og_count)
-    
+
     #some hacking to get a survival-curve like thing
     #TODO: make the color fill the AUC?
-    survival = df %>% mutate(dummy=raw) %>% 
-        select(sample, dummy, 2:4) %>% 
-        gather(step, count, -sample, factor_key=TRUE) %>% 
+    survival = df %>% mutate(dummy=raw) %>%
+        select(sample, dummy, 2:5) %>%
+        gather(step, count, -sample, factor_key=TRUE) %>%
         mutate_at(vars(step), as.numeric)
-    
+
     surv_abs = survival_plot(survival, scalefactor = 1e6, ylabel = "library size (M reads)") +
         ggtitle("read processing summary",
                 subtitle = "absolute library size")
-    
+
     surv_rel = survival_plot(survival %>% group_by(sample) %>% mutate(count=count/max(count)),
                              scalefactor = .01, ylabel = "% of raw reads") +
         ggtitle("read processing summary", subtitle = "relative to library size")
-        
+
     ggsave(surv_abs_out, plot=surv_abs, width=14, height=2+2.5*nsamples, units="cm")
     ggsave(surv_rel_out, plot=surv_rel, width=14, height=2+2.5*nsamples, units="cm")
-    
+
     loss_plot = ggplot(data = loss, aes(x=step, y=0, fill=loss)) +
         geom_raster() +
         geom_text(aes(label=round(loss, 2)), size=4) +
@@ -78,7 +78,7 @@ main = function(in_table, surv_abs_out, surv_rel_out, loss_out){
               axis.title.y.right = element_blank(),
               plot.subtitle = element_text(size=12, face="plain"),
               panel.border = element_blank())
-    
+
     ggsave(loss_out, plot=loss_plot, width=14, height=2+1.5*nsamples, units="cm")
 }
 
@@ -86,3 +86,4 @@ main(in_table = snakemake@input[[1]],
      surv_abs_out = snakemake@output[["surv_abs_out"]],
      surv_rel_out = snakemake@output[["surv_rel_out"]],
      loss_out = snakemake@output[["loss_out"]])
+
