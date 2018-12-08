@@ -49,7 +49,7 @@ rule align:
                                              num = [1,2]),
         fastq = f"fastq/cleaned/{{sample}}_{FACTOR}-chipseq-cleaned.fastq.gz",
     output:
-        bam = temp(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers.bam"),
+        bam = f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers.bam",
         unaligned_fastq = f"fastq/{{sample}}_{FACTOR}-chipseq-unaligned.fastq.gz",
         log = "logs/align/align_{sample}.log"
     params:
