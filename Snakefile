@@ -59,16 +59,16 @@ wildcard_constraints:
     direction = "all|up|unchanged|down",
     factor=FACTOR
 
-# status_norm_sample_dict = {
-#     "all":
-#         {   "libsizenorm" : SAMPLES,
-#             "spikenorm" : SISAMPLES
-#         },
-#     "passing":
-#         {   "libsizenorm" : PASSING,
-#             "spikenorm" : SIPASSING
-#         }
-#     }
+status_norm_sample_dict = {
+    "all":
+        {   "libsizenorm" : SAMPLES,
+            "spikenorm" : SISAMPLES
+        },
+    "passing":
+        {   "libsizenorm" : PASSING,
+            "spikenorm" : SIPASSING
+        }
+    }
 
 def get_samples(status, norm, groups):
     if "all" in groups:
@@ -82,7 +82,7 @@ include: "rules/chip-seq_fastqc.smk"
 include: "rules/chip-seq_library_processing_summary.smk"
 include: "rules/chip-seq_peakcalling.smk"
 include: "rules/chip-seq_genome_coverage.smk"
-# include: "rules/mnase-seq_sample_similarity.smk"
+include: "rules/chip-seq_sample_similarity.smk"
 # include: "rules/mnase-seq_datavis.smk"
 # include: "rules/mnase-seq_quantification.smk"
 # include: "rules/mnase-seq_differential_occupancy.smk"
@@ -92,6 +92,12 @@ onsuccess:
 
 localrules: all
 
+def statuscheck(dict1, dict2):
+    return(["passing"] if dict1 == dict2 else ["all", "passing"])
+
+def conditioncheck(conditionlist):
+    return(conditionlist if len(conditionlist)==1 else conditionlist.append("all"))
+
 rule all:
     input:
         #require config file so that it gets archived
@@ -99,20 +105,14 @@ rule all:
         #fastqc
         f'qual_ctrl/fastqc/{FACTOR}-chipseq-per_base_sequence_content.svg',
         #alignment
-        expand("alignment/{sample}_{factor}-chipseq-uniquemappers.bam", sample=SAMPLES, factor=FACTOR),
+        expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers.bam", sample=SAMPLES),
         #coverage
         expand("coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{strand}.bw", sample=SAMPLES, factor=FACTOR, norm=["counts","libsizenorm"], strand=["plus","minus","protection","midpoints"]),
         expand("coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{strand}.bw", sample=SISAMPLES, factor=FACTOR, norm=["sicounts", "spikenorm"], strand=["plus","minus","protection","midpoints"]),
         f"qual_ctrl/read_processing/{FACTOR}-chipseq_read-processing-loss.svg",
-        expand("qual_ctrl/spikein/{factor}-chipseq_spikein-plots-{status}.svg", factor=FACTOR, status=["all","passing"]) if SISAMPLES else [],
-        #expand("coverage/libsizenorm/{sample}_mnase-midpoint_smoothed-libsizenorm.bw", sample=SAMPLES),
-        #expand("coverage/spikenorm/{sample}_mnase-midpoint_smoothed-spikenorm.bw", sample=SISAMPLES),
-        ##quality controls
-        #"qual_ctrl/read_processing/mnase-seq_read_processing-loss.svg",
-        #"qual_ctrl/fragment_length_distributions/mnase-seq_fragment_length_distributions.svg",
-        #expand("qual_ctrl/spikein/mnase-seq_spikein-plots-{status}.svg", status=["all","passing"]) if SISAMPLES else [],
-        #expand(expand("qual_ctrl/scatter_plots/{condition}-v-{control}/{{status}}/{condition}-v-{control}_mnase-seq-spikenorm-scatterplots-{{status}}-window-{{windowsize}}.svg", zip, condition=conditiongroups_si+["all"], control=controlgroups_si+["all"]), status=["all","passing"], windowsize=config["scatterplot_binsizes"]) if SISAMPLES and comparisons_si else [],
-        #expand(expand("qual_ctrl/scatter_plots/{condition}-v-{control}/{{status}}/{condition}-v-{control}_mnase-seq-libsizenorm-scatterplots-{{status}}-window-{{windowsize}}.svg", zip, condition=conditiongroups+["all"], control=controlgroups+["all"]), status=["all","passing"], windowsize=config["scatterplot_binsizes"]),
+        expand("qual_ctrl/spikein/{factor}-chipseq_spikein-plots-{status}.svg", factor=FACTOR, status=statuscheck(SISAMPLES, SIPASSING)) if SISAMPLES else [],
+        expand(expand("qual_ctrl/scatter_plots/{condition}-v-{control}/{{status}}/{condition}-v-{control}_{{factor}}-chipseq-spikenorm-scatterplots-{{status}}-window-{{windowsize}}.svg", zip, condition=conditioncheck(conditiongroups_si), control=conditioncheck(controlgroups_si)), status=statuscheck(SISAMPLES, SIPASSING), windowsize=config["scatterplot_binsizes"], factor=FACTOR) if SISAMPLES and comparisons_si else [],
+        expand(expand("qual_ctrl/scatter_plots/{condition}-v-{control}/{{status}}/{condition}-v-{control}_{{factor}}-chipseq-libsizenorm-scatterplots-{{status}}-window-{{windowsize}}.svg", zip, condition=conditioncheck(conditiongroups), control=conditioncheck(controlgroups)), status=statuscheck(SAMPLES, PASSING), windowsize=config["scatterplot_binsizes"], factor=FACTOR),
         ##datavis
         #expand(expand("datavis/{{figure}}/spikenorm/{condition}-v-{control}/{{status}}/{{readtype}}/mnase-seq_{{figure}}-spikenorm-{{status}}_{condition}-v-{control}_{{readtype}}-heatmap-bysample.svg", zip, condition=conditiongroups_si+["all"], control=controlgroups_si+["all"]), figure=FIGURES, readtype=["midpoint","wholefrag"], status=["all","passing"]) if config["plot_figures"] and SISAMPLES and comparisons_si else [],
         #expand(expand("datavis/{{figure}}/libsizenorm/{condition}-v-{control}/{{status}}/{{readtype}}/mnase-seq_{{figure}}-libsizenorm-{{status}}_{condition}-v-{control}_{{readtype}}-heatmap-bysample.svg", zip, condition=conditiongroups+["all"], control=controlgroups+["all"]), figure=FIGURES, readtype=["midpoint","wholefrag"], status=["all","passing"]) if config["plot_figures"] else [],

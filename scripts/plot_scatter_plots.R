@@ -3,7 +3,7 @@ library(GGally)
 library(viridis)
 library(forcats)
 
-main = function(intable, binsize, pcount, samplelist, outpath){
+main = function(intable, factor, binsize, pcount, samplelist, outpath){
     df = intable %>% read_tsv() %>%
         gather(key=sample, value=signal, -name) %>%
         filter(sample %in% samplelist) %>%
@@ -65,7 +65,7 @@ main = function(intable, binsize, pcount, samplelist, outpath){
     }
 
     mat = ggmatrix(plots, nrow=ncol(df), ncol=ncol(df),
-                   title = paste0("MNase-seq dyad signal, ", binsize, "bp bins"),
+                   title = paste0(factor, " ChIP-seq signal, ", binsize, "bp bins"),
                    xAxisLabels = names(df), yAxisLabels = names(df), switch="both") +
                     theme_light() +
                     theme(plot.title = element_text(size=12, color="black", face="bold"),
@@ -83,6 +83,7 @@ main = function(intable, binsize, pcount, samplelist, outpath){
 }
 
 main(intable = snakemake@input[[1]],
+     factor = snakemake@wildcards[["factor"]],
      binsize = snakemake@wildcards[["windowsize"]],
      pcount = snakemake@params[["pcount"]],
      samplelist = snakemake@params[["samplelist"]],

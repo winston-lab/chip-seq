@@ -5,11 +5,9 @@ logs/cluster/*
 .snakemake/
 alignment/
 coverage/
-nucleosome_quantification/
-diff_levels/
 qual_ctrl/
 datavis/
-scripts/danpos-2.2.2/*.pyc
+peakcalling/
 scripts/.snakemake*
 snakemake.err
 snakemake.log
@@ -17,6 +15,7 @@ snakemake.log
 mogrify.log
 README.html
 config.yaml
+*.*.swp
 
 Rplots.pdf
 !fastq/.gitkeep

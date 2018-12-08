@@ -126,7 +126,7 @@ rule fastqc_aggregate:
             title = fastqc_dict[fastqc_metric]["title"]
             fields = fastqc_dict[fastqc_metric]["fields"]
             for read_status, read_status_data in input.items():
-                for sample_id, fastqc_data in zip((["unmatched"] if config["unmatched"] else []) + list(SAMPLES.keys()), read_status_data):
+                for sample_id, fastqc_data in zip((["unmatched"] if config["unmatched"] and read_status=="raw" else []) + list(SAMPLES.keys()), read_status_data):
                     if sample_id=="unmatched" and title=="Adapter Content":
                         shell("""awk 'BEGIN{{FS=OFS="\t"}} /{title}/{{flag=1;next}}/>>END_MODULE/{{flag=0}} flag {{m=$2;for(i=2;i<=NF-2;i++)if($i>m)m=$i; print $1, m, "{sample_id}", "{read_status}"}}' {fastqc_data} | tail -n +2 >> {out_path}""")
                     else:

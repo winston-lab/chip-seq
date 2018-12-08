@@ -1,69 +1,68 @@
 __default__ :
     queue : "short"
-    time : 60
+    time : 10
     n : 1
-    mem : 2000
+    mem : 200
     name : "{rule}.{wildcards}"
     log : "logs/cluster/{rule}.{wildcards}.log"
     err : "logs/cluster/{rule}.{wildcards}.err"
 
-fastqc_raw:
-    time : 10
+fastqc_pre_and_unaligned:
+    time : 6
     n : 2
-    mem : 6000
+    mem : 200
 
-fastqc_processed:
-    time : 4
-    mem : 4000
+fastqc_aligned:
+    time : 6
+    n : 2
+    mem : 200
 
 plot_fastqc_summary:
     time: 4
     n: 1
-    mem: 8000
+    mem: 400
 
 clean_reads:
-    time : 60
+    time : 15
     n : 4
-    mem : 4000
+    mem : 150
 
 align:
-    time : 60
+    time : 15
     n : 4
-    mem : 2000
+    mem : 1000
 
 bam_separate_species:
-    time: 15
-    mem: 2000
+    time: 3
+    mem: 50
 
-get_fragment_lengths:
-    time: 60
-    n: 4
-    mem: 4000
+crosslink_coverage:
+    time : 4
+    mem : 75
 
-get_fragments:
-    time : 20
-    n : 2
-    mem : 4000
+protection_coverage:
+    time : 3
+    mem : 100
 
 midpoint_coverage:
-    time : 20
-    mem : 2000
-
-whole_fragment_coverage:
-    time : 6
-    mem : 2000
-
-smoothed_midpoint_coverage:
     time : 3
-    mem : 2000
+    mem : 75
 
 normalize_genome_coverage:
-    time: 4
-    mem: 2000
+    time : 4
+    mem : 50
+
+make_stranded_bedgraph:
+    time: 3
+    mem: 50
 
 bedgraph_to_bigwig:
-    time: 3
-    mem: 2000
+    time : 2
+    mem : 2
+
+callpeaks_macs2:
+    time : 5
+    mem : 500
 
 map_to_windows:
     time: 7
@@ -77,10 +76,6 @@ plot_scatter_plots:
     time : 20
     mem : 10000
 
-# plot_fragsizes:
-#     time : 60
-#     mem : 4000
-
 compute_matrix:
     time : 10
     mem : 2000
@@ -88,20 +83,4 @@ compute_matrix:
 plot_figures:
     time : 40
     mem : 10000
-
-danpos_quantification:
-    time: 60
-    mem: 4000
-
-plot_danpos_results:
-    time: 10
-    mem: 10000
-
-danpos_vis_over_annotations:
-    time: 10
-    mem: 10000
-
-call_nuclevel_changes:
-    time: 10
-    mem: 10000
 

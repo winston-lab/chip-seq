@@ -84,8 +84,7 @@ comparisons:
 
 # [INT] binsizes for scatterplots
 scatterplot_binsizes:
-    - 10
-    - 25
+    - 200
 
 # cutadapt settings
 cutadapt:
@@ -98,11 +97,11 @@ bowtie2:
     minmapq : 5
 
 macs2:
-    bw: 160 # bandwidth for model building: set as sonication fragment size
-    llocal: 1000  # large region for calculating local lambda
-    slocal: 200  # small region for calculating local lambda
+    bw: 250 # bandwidth for model building: set as sonication fragment size
+    llocal: 2000  # large region for calculating local lambda
+    slocal: 500  # small region for calculating local lambda
     fdr: 0.05  # minimum cutoff to call significant regions
-    mfold_low: 5  #
+    mfold_low: 2  #
     mfold_high: 50
 
 # for smoothed coverage tracks
