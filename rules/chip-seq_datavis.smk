@@ -5,11 +5,11 @@ localrules: cat_matrices
 rule compute_matrix:
     input:
         annotation = lambda wc: FIGURES[wc.figure]["annotations"][wc.annotation]["path"],
-        bw = f"coverage/{{norm}}/{{sample}}_{FACTOR}-chipseq-{{norm}}-{{strand}}.bw"
+        bw = lambda wc: f"coverage/{wc.norm}/{wc.sample}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw" if wc.sampletype=="CHIP" else f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw".format(sample = CHIPS[wc.sample]["input"])
     output:
-        dtfile = temp("datavis/{figure}/{norm}/{annotation}_{sample}-{norm}-{strand}.mat.gz"),
-        matrix = temp("datavis/{figure}/{norm}/{annotation}_{sample}-{norm}-{strand}.tsv"),
-        melted = temp("datavis/{figure}/{norm}/{annotation}_{sample}-{norm}-{strand}-melted.tsv.gz"),
+        dtfile = temp("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}.mat.gz"),
+        matrix = temp("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}.tsv"),
+        melted = temp("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}-melted.tsv.gz"),
     params:
         group = lambda wc : SAMPLES[wc.sample]["group"],
         refpoint = lambda wc: "TSS" if FIGURES[wc.figure]["parameters"]["type"]=="scaled" else FIGURES[wc.figure]["parameters"]["refpoint"],
@@ -21,18 +21,18 @@ rule compute_matrix:
         nan_afterend = lambda wc: [] if FIGURES[wc.figure]["parameters"]["type"]=="scaled" or not FIGURES[wc.figure]["parameters"]["nan_afterend"] else "--nanAfterEnd",
         anno_label = lambda wc: FIGURES[wc.figure]["annotations"][wc.annotation]["label"]
     threads : config["threads"]
-    log: "logs/compute_matrix/compute_matrix-{figure}_{annotation}_{sample}-{norm}-{strand}.log"
+    log: "logs/compute_matrix/compute_matrix-{figure}_{annotation}_{sample}-{sampletype}-{norm}-{strand}.log"
     run:
         if FIGURES[wildcards.figure]["parameters"]["type"]=="absolute":
             shell("""(computeMatrix reference-point -R {input.annotation} -S {input.bw} --referencePoint {params.refpoint} -out {output.dtfile} --outFileNameMatrix {output.matrix} -b {params.upstream} -a {params.dnstream} {params.nan_afterend} --binSize {params.binsize} --averageTypeBins {params.binstat} -p {threads}) &> {log}""")
         else:
             shell("""(computeMatrix scale-regions -R {input.annotation} -S {input.bw} -out {output.dtfile} --outFileNameMatrix {output.matrix} -m {params.scaled_length} -b {params.upstream} -a {params.dnstream} --binSize {params.binsize} --averageTypeBins {params.binstat} -p {threads}) &> {log}""")
         melt_upstream = params.upstream-params.binsize
-        shell("""(Rscript scripts/melt_matrix.R -i {output.matrix} -r {params.refpoint} -g {params.group} -s {wildcards.sample} -a {params.anno_label} -b {params.binsize} -u {melt_upstream} -o {output.melted}) &>> {log}""")
+        shell("""(Rscript scripts/melt_matrix_chipseq.R -i {output.matrix} -r {params.refpoint} --group {params.group} -s {wildcards.sample} -t {wildcards.sampletype} -a {params.anno_label} -b {params.binsize} -u {melt_upstream} -o {output.melted}) &>> {log}""")
 
 rule cat_matrices:
     input:
-        lambda wc: expand("datavis/{figure}/{norm}/{annotation}_{sample}-{norm}-{strand}-melted.tsv.gz", annotation=list(FIGURES[wc.figure]["annotations"].keys()), sample=SAMPLES, figure=wc.figure, norm=wc.norm, strand=wc.strand)
+        lambda wc: expand("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}-melted.tsv.gz", annotation=list(FIGURES[wc.figure]["annotations"].keys()), sample=CHIPS, sampletype=["CHIP", "INPUT"], figure=wc.figure, norm=wc.norm, strand=wc.strand)
     output:
         "datavis/{figure}/{norm}/{figure}-allsamples-allannotations-{factor}-chipseq-{norm}-{strand}.tsv.gz"
     log: "logs/cat_matrices/cat_matrices-{figure}_{norm}-{strand}-{factor}.log"

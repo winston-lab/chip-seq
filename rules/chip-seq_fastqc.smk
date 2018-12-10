@@ -55,8 +55,10 @@ rule fastqc_aligned:
         adapter = lambda wc: SAMPLES[wc.sample]["barcode"]+"T"
     output:
         "qual_ctrl/fastqc/unique_mappers/{sample}_fastqc-data-unique_mappers.txt"
-    threads : config["threads"]
-    log: "logs/fastqc/fastqc_unique_mappers_{sample}.log"
+    threads:
+        config["threads"]
+    log:
+        "logs/fastqc/fastqc_unique_mappers_{sample}.log"
     shell: """
         (mkdir -p qual_ctrl/fastqc/unique_mappers) &> {log}
         (bedtools bamtofastq -fq qual_ctrl/fastqc/unique_mappers/{params.fname}.fastq -i {input}) &>> {log}
@@ -153,6 +155,8 @@ rule plot_fastqc_summary:
         per_seq_qual = f'qual_ctrl/fastqc/{FACTOR}-chipseq-per_sequence_quality.svg',
         adapter_content = f'qual_ctrl/fastqc/{FACTOR}-chipseq-adapter_content.svg',
         seq_dup = f'qual_ctrl/fastqc/{FACTOR}-chipseq-sequence_duplication_levels.svg',
-    conda: "../envs/tidyverse.yaml"
-    script: "../scripts/fastqc_summary.R"
+    conda:
+        "../envs/tidyverse.yaml"
+    script:
+        "../scripts/fastqc_summary.R"
 
