@@ -61,7 +61,7 @@ bedgraph_to_bigwig:
     mem : 2
 
 callpeaks_macs2:
-    time : 5
+    time : 10
     mem : 500
 
 map_to_windows:
