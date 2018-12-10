@@ -8,7 +8,7 @@ __default__ :
     err : "logs/cluster/{rule}.{wildcards}.err"
 
 fastqc_pre_and_unaligned:
-    time : 6
+    time : 12
     n : 2
     mem : 200
 
@@ -61,8 +61,8 @@ bedgraph_to_bigwig:
     mem : 2
 
 callpeaks_macs2:
-    time : 10
-    mem : 500
+    time : 15
+    mem : 1000
 
 map_to_windows:
     time: 7
