@@ -117,9 +117,9 @@ plot_figures: True  # [True|False] plot heatmaps and metagenes?
 figures:
     allcoding-TSS:  # [STRING] name of figure. Do not include underscores ("_")
         annotations:
-            coding-genes:  # [STRING] name of region. Do not include underscores ("_"). More than one region can be plotted.
-                path: ../genome/annotations/S_pombe_codingtranscripts-adjustedTSS.bed  # path to BED6 file of regions
-                label: coding genes  # [STRING] label for region
+            verified-transcripts-nonoverlapping-slopR300-TSS:  # [STRING] name of region. Do not include underscores ("_"). More than one region can be plotted.
+                path: /n/groups/winston/jc459/intragenic/genome/annotations/Scer_transcripts_w_verifiedORFs-nonoverlapping_slopR300.bed  # path to BED6 file of regions
+                label: nonoverlapping coding genes  # [STRING] label for region
                 n_clusters: 1  # [INT] number of clusters to separate region into. Leave 1 for no clustering. Basic k-means clustering is used.
         parameters:
             type: absolute  # [absolute|scaled] Plot absolute distances, or scale all annotations to the same length. For MNase-seq you almost always want absolute distance
@@ -139,30 +139,7 @@ figures:
             #     - depleted
             # cluster_five: -500  # [INT] 5' boundary of the data to be used for clustering, relative to the reference point.
             # cluster_three: 500  # [INT] 3' boundary of the data to be used for clustering, relative to the reference point
-            heatmap_colormap: viridis  # [viridis|inferno|magma|plasma] colormap for heatmaps
-
-# settings for visualization of nucleosome quantification
-quantification:
-    allcoding-plusonenuc:  # [STRING] name of figure. Do not include underscores ("_")
-        annotations:
-            all:  # [STRING] name of region. Do not include underscores ("_"). More than one region can be plotted.
-                path: /n/groups/winston/jc459/spt5/genome/annotations/S_pombe_alltranscripts-plus-one-nuc-dyad.bed  # path to BED6 file of regions
-                label: coding genes  # [STRING] label for region
-        refpoint: TSS
-        refpointlabel: +1 dyad  # [STRING] label for reference point
-        upstream: 500  # [INT] nucleotides upstream of reference point to plot.
-        dnstream: 0  # [INT] maximum nucleotides downstream of 3' end of annotation to plot.
-        max_length: 1500  # [INT] maximum nucleotides downstream of reference point to plot
-        arrange: length  # [no|length] No: keep annotations in order of annotation file. Length: sort annotations in order of length before plotting.
-        binsize: 10  # [INT] number of bases to bin for metagenes
-        occupancy_cutoff_low: 0.1  # [FLOAT in (0,1)] lower percentile to cut off occupancy heatmap colorbars
-        occupancy_cutoff_high: 0.9  # [FLOAT in (0,1)] upper percentile to cut off occupancy heatmap colorbars
-        fuzziness_cutoff_low: 0.1  # [FLOAT in (0,1)] lower percentile to cut off fuzziness heatmap colorbars
-        fuzziness_cutoff_high: 0.9  # [FLOAT in (0,1)] upper percentile to cut off fuzziness heatmap colorbars
-        occupancy_lfc_limit: 1  # [FLOAT] fold-change cutoff for occupancy lfc heatmap colorbar
-        fuzziness_lfc_limit: 0.25  # [FLOAT] fold-change cutoff for fuzziness lfc heatmap colorbar
-        displacement_limit: 20  # [INT] cutoff for displacement heatmap colorbar
-        trim_pct: 0.1  # [FLOAT in (0,1)] percent of data to winsorize for metagenes
+            heatmap_colormap: inferno  # [viridis|inferno|magma|plasma] colormap for heatmaps
 
 # maximum number of threads to use if running locally
 threads: 4  # [INT]
