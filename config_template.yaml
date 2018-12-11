@@ -115,24 +115,25 @@ deseq:
 # data visualization settings
 plot_figures: True  # [True|False] plot heatmaps and metagenes?
 figures:
-    allcoding-TSS:  # [STRING] name of figure. Do not include underscores ("_")
+    verified-transcripts-nonoverlapping-slopR300-TSS:  # [STRING] name of figure. Do not include underscores ("_")
         annotations:
-            verified-transcripts-nonoverlapping-slopR300-TSS:  # [STRING] name of region. Do not include underscores ("_"). More than one region can be plotted.
+            nonoverlapping-coding-genes:  # [STRING] name of region. Do not include underscores ("_"). More than one region can be plotted.
                 path: /n/groups/winston/jc459/intragenic/genome/annotations/Scer_transcripts_w_verifiedORFs-nonoverlapping_slopR300.bed  # path to BED6 file of regions
                 label: nonoverlapping coding genes  # [STRING] label for region
                 n_clusters: 1  # [INT] number of clusters to separate region into. Leave 1 for no clustering. Basic k-means clustering is used.
         parameters:
             type: absolute  # [absolute|scaled] Plot absolute distances, or scale all annotations to the same length. For MNase-seq you almost always want absolute distance
-            binsize: 5  # [INT] binsize to summarise data
+            binsize: 20  # [INT] binsize to summarise data
             binstat: mean  # [mean|median|min|max|sum|std] operation used to summarise data
             refpoint: TSS  # [TSS|TES|center] reference point in region. TSS and TES correspond to the 5' and 3' ends, respectively.
             refpointlabel: TSS  # [STRING] label for reference point
             upstream: 400  # [INT] nucleotides upstream of reference point to plot. Must be a multiple of the binsize.
             dnstream: 1500  # [INT] maximum nucleotides downstream of reference point to plot. Must be a multiple of the binsize.
             nan_afterend: True  # [True|False] Should data after the end of the annotation be left out? Useful for length-sorted heatmaps.
-            pct_cutoff: .92  # [FLOAT in (0,1)] Percentile of the data to set as the maximum of the colorbar in heatmaps
+            pct_cutoff: .95  # [FLOAT in (0,1)] Percentile of the data to set as the maximum of the colorbar in heatmaps
+            log_transform: False
             spread_type: quantile  # [conf_int|quantile] Plot 95% confidence interval of the mean, or quantiles of the data.
-            trim_pct: 0.1  # [FLOAT in (0,1)] For confidence intervals, this is the percent to winsorize before taking the mean. For quantiles, this is the lower quantile.
+            trim_pct: 0.25  # [FLOAT in (0,1)] For confidence intervals, this is the percent to winsorize before taking the mean. For quantiles, this is the lower quantile.
             arrange: length   # [no|length|cluster] No: keep annotations in order of annotation file. Length: sort annotations in order of length before plotting. Cluster: try to plot annotations with similar data close to one another, using optimal leaf ordering of hierarchical clustering
             # cluster_conditions:  # if arrange: cluster, the conditions to be used for clustering
             #     - non-depleted
@@ -140,6 +141,27 @@ figures:
             # cluster_five: -500  # [INT] 5' boundary of the data to be used for clustering, relative to the reference point.
             # cluster_three: 500  # [INT] 3' boundary of the data to be used for clustering, relative to the reference point
             heatmap_colormap: inferno  # [viridis|inferno|magma|plasma] colormap for heatmaps
+    verified-transcripts-scaled:
+        annotations:
+            nonoverlapping-coding-genes:
+                path: /n/groups/winston/jc459/intragenic/genome/annotations/Scer_transcripts_w_verifiedORFs-nonoverlapping_slopR300.bed
+                label: nonoverlapping coding genes
+                n_clusters: 1
+        parameters:
+            type: scaled # absolute | scaled
+            binsize : 20
+            binstat : mean # mean | median | min | max | sum | std
+            scaled_length: 2000 # int
+            upstream : 500 # int
+            dnstream : 500 # int
+            refpointlabel : TSS # string: label for 5prime reference point
+            endlabel : CPS # string: label for 3prime reference point
+            pct_cutoff : .95 # winsorize data above this percentile in heatmaps
+            log_transform: False
+            spread_type: quantile
+            trim_pct : 0.25
+            arrange: length
+            heatmap_colormap : inferno  # viridis | inferno | magma | plasma
 
 # maximum number of threads to use if running locally
 threads: 4  # [INT]
