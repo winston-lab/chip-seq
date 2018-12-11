@@ -146,7 +146,9 @@ main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnst
             scale_color_ptol(guide=guide_legend(label.position=ifelse(groupvar %in% c("sampleanno", "groupanno"), "right", "top"),
                                                 label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5))) +
             scale_fill_ptol() +
-            scale_linetype_manual(values = c("dashed", "solid")) +
+            scale_linetype_manual(values = c("dashed", "solid"),
+                                  guide=guide_legend(label.position=ifelse(groupvar %in% c("sampleanno", "groupanno"), "right", "top"),
+                                                     label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5))) +
             scale_alpha_manual(values=c(0.1, 0.4),
                                guide=guide_legend(label.position=ifelse(groupvar %in% c("sampleanno", "groupanno"), "right", "top"),
                                                   label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5))) +
