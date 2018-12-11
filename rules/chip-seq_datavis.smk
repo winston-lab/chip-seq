@@ -5,7 +5,7 @@ localrules: cat_matrices
 rule compute_matrix:
     input:
         annotation = lambda wc: FIGURES[wc.figure]["annotations"][wc.annotation]["path"],
-        bw = lambda wc: f"coverage/{wc.norm}/{wc.sample}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw" if wc.sampletype=="CHIP" else f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw".format(sample = CHIPS[wc.sample]["input"])
+        bw = lambda wc: f"coverage/{wc.norm}/{wc.sample}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw" if wc.sampletype=="ChIP" else f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw".format(sample = CHIPS[wc.sample]["input"])
     output:
         dtfile = temp("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}.mat.gz"),
         matrix = temp("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}.tsv"),
@@ -32,7 +32,7 @@ rule compute_matrix:
 
 rule cat_matrices:
     input:
-        lambda wc: expand("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}-melted.tsv.gz", annotation=list(FIGURES[wc.figure]["annotations"].keys()), sample=CHIPS, sampletype=["CHIP", "INPUT"], figure=wc.figure, norm=wc.norm, strand=wc.strand)
+        lambda wc: expand("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}-melted.tsv.gz", annotation=list(FIGURES[wc.figure]["annotations"].keys()), sample=CHIPS if wc.norm=="libsizenorm" else CHIPS_SISAMPLES, sampletype=["ChIP", "input"], figure=wc.figure, norm=wc.norm, strand=wc.strand)
     output:
         "datavis/{figure}/{norm}/{figure}-allsamples-allannotations-{factor}-chipseq-{norm}-{strand}.tsv.gz"
     log: "logs/cat_matrices/cat_matrices-{figure}_{norm}-{strand}-{factor}.log"
@@ -40,43 +40,43 @@ rule cat_matrices:
         (cat {input} > {output}) &> {log}
         """
 
-# rule plot_figures:
-#     input:
-#         matrix = "datavis/{figure}/{norm}/{figure}-allsamples-allannotations-{factor}-chipseq-{norm}-{strand}.tsv.gz"
-#         annotations = lambda wc: [v["path"] for k,v in FIGURES[wc.figure]["annotations"].items()]
-#     output:
-#         heatmap_sample = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-heatmap-bysample.svg",
-#         heatmap_group = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-heatmap-bygroup.svg",
-#         meta_sample = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metagene-bysample.svg",
-#         meta_sample_overlay = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metagene-bysample-overlay.svg",
-#         meta_group = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metagene-bygroup.svg",
-#         meta_sample_clust = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metagene-bycluster-sample.svg",
-#         meta_group_clust = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metagene-bycluster-group.svg",
-#         metahmap_sample = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metahmap-bysample.svg",
-#         metahmap_group = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metahmap-bygroup.svg",
-#     params:
-#         # abusing snakemake a bit here...using params as output paths since in order to use lambda functions
-#         annotations_out = lambda wc: ["datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/".format(**wc) + annotation + "_cluster-" + str(cluster) + ".bed" for annotation in FIGURES[wc.figure]["annotations"] for cluster in range(1, FIGURES[wc.figure]["annotations"][annotation]["n_clusters"]+1)],
-#         clusters_out = lambda wc: ["datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/".format(**wc) + annotation + ".pdf" for annotation in FIGURES[wc.figure]["annotations"]],
-#         samplelist = lambda wc: get_samples(wc.status, wc.norm, [wc.condition, wc.control]),
-#         plottype = lambda wc: FIGURES[wc.figure]["parameters"]["type"],
-#         readtype = lambda wc: "dyad signal" if wc.readtype=="midpoint" else "protection",
-#         upstream = lambda wc: FIGURES[wc.figure]["parameters"]["upstream"],
-#         dnstream = lambda wc: FIGURES[wc.figure]["parameters"]["dnstream"],
-#         scaled_length = lambda wc: 0 if FIGURES[wc.figure]["parameters"]["type"]=="absolute" else FIGURES[wc.figure]["parameters"]["scaled_length"],
-#         pct_cutoff = lambda wc: FIGURES[wc.figure]["parameters"]["pct_cutoff"],
-#         spread_type = lambda wc: FIGURES[wc.figure]["parameters"]["spread_type"],
-#         trim_pct = lambda wc: FIGURES[wc.figure]["parameters"]["trim_pct"],
-#         refpointlabel = lambda wc: FIGURES[wc.figure]["parameters"]["refpointlabel"],
-#         endlabel = lambda wc:  "HAIL SATAN" if FIGURES[wc.figure]["parameters"]["type"]=="absolute" else FIGURES[wc.figure]["parameters"]["endlabel"],
-#         cmap = lambda wc: FIGURES[wc.figure]["parameters"]["heatmap_colormap"],
-#         sortmethod = lambda wc: FIGURES[wc.figure]["parameters"]["arrange"],
-#         cluster_scale = lambda wc: "FALSE" if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else str(FIGURES[wc.figure]["parameters"]["cluster_scale"]).upper(),
-#         cluster_samples = lambda wc: [] if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else get_samples(wc.status, wc.norm, FIGURES[wc.figure]["parameters"]["cluster_conditions"]),
-#         cluster_five = lambda wc: [] if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else FIGURES[wc.figure]["parameters"]["cluster_five"],
-#         cluster_three = lambda wc: [] if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else FIGURES[wc.figure]["parameters"]["cluster_three"],
-#         k = lambda wc: [v["n_clusters"] for k,v in FIGURES[wc.figure]["annotations"].items()],
-#     conda: "../envs/tidyverse.yaml"
-#     script:
-#         "../scripts/plot_mnase_figures.R"
+rule plot_figures:
+    input:
+        matrix = "datavis/{figure}/{norm}/{figure}-allsamples-allannotations-{factor}-chipseq-{norm}-{readtype}.tsv.gz",
+        annotations = lambda wc: [v["path"] for k,v in FIGURES[wc.figure]["annotations"].items()]
+    output:
+        heatmap_sample = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-heatmap-bysample.svg",
+        heatmap_group = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-heatmap-bygroup.svg",
+        meta_sample = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metagene-bysample.svg",
+        meta_sample_overlay = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metagene-bysample-overlay.svg",
+        meta_sampleanno = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metagene-byanno-sample.svg",
+        meta_groupanno = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metagene-byanno-group.svg",
+        meta_group = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metagene-bygroup.svg",
+        meta_sampleclust = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metagene-bycluster-sample.svg",
+        meta_groupclust = "datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/{factor}-chipseq_{figure}-{norm}-{status}_{condition}-v-{control}_{readtype}-metagene-bycluster-group.svg",
+    params:
+        # abusing snakemake a bit here...using params as output paths since in order to use lambda functions
+        annotations_out = lambda wc: ["datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/".format(**wc) + annotation + "_cluster-" + str(cluster) + ".bed" for annotation in FIGURES[wc.figure]["annotations"] for cluster in range(1, FIGURES[wc.figure]["annotations"][annotation]["n_clusters"]+1)],
+        clusters_out = lambda wc: ["datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/".format(**wc) + annotation + ".pdf" for annotation in FIGURES[wc.figure]["annotations"]],
+        samplelist = lambda wc: get_samples(wc.status, wc.norm, [wc.condition, wc.control]),
+        plottype = lambda wc: FIGURES[wc.figure]["parameters"]["type"],
+        upstream = lambda wc: FIGURES[wc.figure]["parameters"]["upstream"],
+        dnstream = lambda wc: FIGURES[wc.figure]["parameters"]["dnstream"],
+        scaled_length = lambda wc: 0 if FIGURES[wc.figure]["parameters"]["type"]=="absolute" else FIGURES[wc.figure]["parameters"]["scaled_length"],
+        pct_cutoff = lambda wc: FIGURES[wc.figure]["parameters"]["pct_cutoff"],
+        log_transform = lambda wc: str(FIGURES[wc.figure]["parameters"]["log_transform"]).upper(),
+        spread_type = lambda wc: FIGURES[wc.figure]["parameters"]["spread_type"],
+        trim_pct = lambda wc: FIGURES[wc.figure]["parameters"]["trim_pct"],
+        refpointlabel = lambda wc: FIGURES[wc.figure]["parameters"]["refpointlabel"],
+        endlabel = lambda wc:  "HAIL SATAN" if FIGURES[wc.figure]["parameters"]["type"]=="absolute" else FIGURES[wc.figure]["parameters"]["endlabel"],
+        cmap = lambda wc: FIGURES[wc.figure]["parameters"]["heatmap_colormap"],
+        sortmethod = lambda wc: FIGURES[wc.figure]["parameters"]["arrange"],
+        cluster_scale = lambda wc: "FALSE" if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else str(FIGURES[wc.figure]["parameters"]["cluster_scale"]).upper(),
+        cluster_samples = lambda wc: [] if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else get_samples(wc.status, wc.norm, FIGURES[wc.figure]["parameters"]["cluster_conditions"]),
+        cluster_five = lambda wc: [] if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else FIGURES[wc.figure]["parameters"]["cluster_five"],
+        cluster_three = lambda wc: [] if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else FIGURES[wc.figure]["parameters"]["cluster_three"],
+        k = lambda wc: [v["n_clusters"] for k,v in FIGURES[wc.figure]["annotations"].items()],
+    conda: "../envs/tidyverse.yaml"
+    script:
+        "../scripts/plot_chipseq_figures.R"
 

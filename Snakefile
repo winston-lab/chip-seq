@@ -95,7 +95,7 @@ def statuscheck(dict1, dict2):
     return(["passing"] if dict1 == dict2 else ["all", "passing"])
 
 def conditioncheck(conditionlist):
-    return(conditionlist if len(conditionlist)==1 else conditionlist.append("all"))
+    return(conditionlist if len(conditionlist)==1 else conditionlist + ["all"])
 
 rule all:
     input:
@@ -112,7 +112,7 @@ rule all:
         expand("qual_ctrl/spikein/{factor}-chipseq_spikein-plots-{status}.svg", factor=FACTOR, status=statuscheck(SISAMPLES, SIPASSING)) if SISAMPLES else [],
         expand(expand("qual_ctrl/scatter_plots/{condition}-v-{control}/{{status}}/{condition}-v-{control}_{{factor}}-chipseq-spikenorm-scatterplots-{{status}}-window-{{windowsize}}.svg", zip, condition=conditioncheck(conditiongroups_si), control=conditioncheck(controlgroups_si)), status=statuscheck(SISAMPLES, SIPASSING), windowsize=config["scatterplot_binsizes"], factor=FACTOR) if SISAMPLES and comparisons_si else [],
         expand(expand("qual_ctrl/scatter_plots/{condition}-v-{control}/{{status}}/{condition}-v-{control}_{{factor}}-chipseq-libsizenorm-scatterplots-{{status}}-window-{{windowsize}}.svg", zip, condition=conditioncheck(conditiongroups), control=conditioncheck(controlgroups)), status=statuscheck(SAMPLES, PASSING), windowsize=config["scatterplot_binsizes"], factor=FACTOR),
-        ##datavis
-        expand("datavis/{figure}/libsizenorm/{figure}-allsamples-allannotations-{factor}-chipseq-libsizenorm-{strand}.tsv.gz", figure=FIGURES, strand=["protection", "midpoints"], factor=FACTOR)
-        # expand(expand("datavis/{{figure}}/spikenorm/{condition}-v-{control}/{{status}}/{{readtype}}/mnase-seq_{{figure}}-spikenorm-{{status}}_{condition}-v-{control}_{{readtype}}-heatmap-bysample.svg", zip, condition=conditioncheck(conditiongroups), control=conditioncheck(controlgroups), figure=FIGURES, readtype=["midpoint","wholefrag"], status=statuscheck(SISAMPLES, SIPASSING))) if config["plot_figures"] and SISAMPLES and comparisons_si else [],
+        #datavis
+        expand(expand("datavis/{{figure}}/libsizenorm/{condition}-v-{control}/{{status}}/{{readtype}}/{{factor}}-chipseq_{{figure}}-libsizenorm-{{status}}_{condition}-v-{control}_{{readtype}}-heatmap-bysample.svg", zip, condition=conditioncheck(conditiongroups), control=conditioncheck(controlgroups)), figure=FIGURES, status=statuscheck(SAMPLES, PASSING), readtype=["midpoints", "protection"], factor=FACTOR),
+        expand(expand("datavis/{{figure}}/spikenorm/{condition}-v-{control}/{{status}}/{{readtype}}/{{factor}}-chipseq_{{figure}}-spikenorm-{{status}}_{condition}-v-{control}_{{readtype}}-heatmap-bysample.svg", zip, condition=conditioncheck(conditiongroups_si), control=conditioncheck(controlgroups_si)), figure=FIGURES, status=statuscheck(SISAMPLES, SIPASSING), readtype=["midpoints", "protection"], factor=FACTOR),
 

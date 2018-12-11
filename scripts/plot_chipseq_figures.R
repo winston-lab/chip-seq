@@ -17,12 +17,12 @@ hmap_ybreaks = function(limits){
     }
 }
 
-main = function(in_path, samplelist, anno_paths, ptype, strand, upstream, dnstream, scaled_length, pct_cutoff, log_transform, pcount,
+main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnstream, scaled_length, pct_cutoff, log_transform, pcount,
                 trim_pct, factorlabel, spread_type, refptlabel, endlabel, cmap, sortmethod, cluster_scale, cluster_samples, cluster_five, cluster_three, k, assay,
-                heatmap_sampleout, heatmap_groupout, meta_sampleout, meta_sample_overlayout, meta_groupout, meta_sampleannoout, meta_groupannoout, meta_sampleclustout, meta_groupclustout,
+                heatmap_sample_out, heatmap_group_out, meta_sample_out, meta_sample_overlay_out, meta_group_out, meta_sampleanno_out, meta_groupanno_out, meta_sampleclust_out, meta_groupclust_out,
                 anno_out, cluster_out){
 
-    hmap = function(df, flimit, strand="both", logtxn=log_transform){
+    hmap = function(df, flimit, readtype="midpoint", logtxn=log_transform){
 
         heatmap_base = ggplot(data = df) +
             geom_vline(xintercept = 0, size=1.5)
@@ -36,8 +36,7 @@ main = function(in_path, samplelist, anno_paths, ptype, strand, upstream, dnstre
             heatmap_base = heatmap_base +
                 geom_raster(aes(x=position, y=new_index, fill=log2(cpm+pcount)), interpolate=FALSE) +
                 scale_fill_viridis(option = cmap,
-                                   # TODO: check for strand when naming
-                                   name = bquote(bold(log[2] ~ .(factorlabel) ~ "ChIP-seq" ~ protection)),
+                                   name = bquote(bold(log[2] ~ .(factorlabel) ~ "ChIP-seq" ~ .(readtype))),
                                    limits = c(NA, flimit), oob=scales::squish,
                                    guide=guide_colorbar(title.position="top",
                                                         barwidth=20, barheight=1, title.hjust=0.5))
@@ -45,9 +44,7 @@ main = function(in_path, samplelist, anno_paths, ptype, strand, upstream, dnstre
             heatmap_base = heatmap_base +
                 geom_raster(aes(x=position, y=new_index, fill=cpm), interpolate=FALSE) +
                 scale_fill_viridis(option = cmap,
-                                   # TODO: check for strand when naming
-                                   name=if_else(strand != "both", paste(strand, assay, "signal"),
-                                                paste(assay, "signal")),
+                                   name = paste(factorlabel, "ChIP-seq", readtype),
                                    limits = c(NA, flimit), oob=scales::squish,
                                    guide=guide_colorbar(title.position="top",
                                                         barwidth=20, barheight=1, title.hjust=0.5))
@@ -99,24 +96,29 @@ main = function(in_path, samplelist, anno_paths, ptype, strand, upstream, dnstre
 
     meta = function(df, groupvar="sample"){
         if (groupvar=="sample"){
-            metagene = ggplot(data = df, aes(x=position, group=sample,
+            metagene = ggplot(data = df, aes(x=position,
+                                             group=interaction(sample, sampletype),
                                              color=group, fill=group))
         } else if (groupvar=="group"){
-            metagene = ggplot(data = df, aes(x=position, group=group,
+            metagene = ggplot(data = df, aes(x=position,
+                                             group=interaction(group, sampletype),
                                              color=group, fill=group))
         } else if (groupvar=="sampleclust"){
-            metagene = ggplot(data = df %>% mutate(sampleclustid = paste(sample, cluster)),
-                              aes(x=position, group=sampleclustid,
+            metagene = ggplot(data = df,
+                              aes(x=position,
+                                  group=interaction(sample, sampletype, cluster),
                                   color=factor(cluster), fill=factor(cluster)))
         } else if (groupvar=="groupclust"){
-            metagene = ggplot(data = df %>% mutate(groupclustid = paste(group, cluster)),
-                              aes(x=position, group=groupclustid,
+            metagene = ggplot(data = df,
+                              aes(x=position,
+                                  group=interaction(group, sampletype, cluster),
                                   color=factor(cluster), fill=factor(cluster)))
         } else if (groupvar=="sampleanno"){
-            metagene = ggplot(data = df %>%
-                                  mutate(grouping = interaction(sample, annotation, cluster),
-                                         coloring = interaction(annotation, cluster)),
-                              aes(x=position, group=grouping, color=coloring, fill=coloring))
+            metagene = ggplot(data = df,
+                              aes(x=position,
+                                  group=interaction(sample, sampletype, annotation, cluster),
+                                  color=interaction(annotation, cluster),
+                                  fill=interaction(annotation, cluster)))
         } else if (groupvar=="groupanno"){
             metagene = ggplot(data = df %>%
                                   mutate(coloring = interaction(annotation, cluster)),
@@ -131,41 +133,23 @@ main = function(in_path, samplelist, anno_paths, ptype, strand, upstream, dnstre
                 geom_vline(xintercept = scaled_length/1000, size=1, color="grey65")
         }
 
-        if (strand=="both"){
-            metagene = metagene +
-                geom_ribbon(aes(ymin=-mid_antisense, ymax=0), alpha=0.05, size=0) +
-                geom_ribbon(aes(ymin=-high_antisense,
-                                ymax=-low_antisense),
-                                alpha=0.4, size=0) +
-                geom_line(aes(y=-mid_antisense)) +
-                geom_ribbon(aes(ymin=0, ymax=mid_sense), alpha=0.1, size=0) +
-                geom_ribbon(aes(ymin=low_sense,
-                                ymax=high_sense),
-                                alpha=0.4, size=0) +
-                geom_line(aes(y=mid_sense)) +
-                geom_hline(yintercept = 0, size=0.5, color="black")
-        } else if (strand=="antisense"){
-            metagene = metagene +
-                geom_ribbon(aes(ymin=low_antisense,
-                                ymax=high_antisense),
-                                alpha=0.4, size=0) +
-                geom_line(aes(y=mid_antisense))
-        } else if (strand=="sense"){
-            metagene = metagene +
-                geom_ribbon(aes(ymin=low_sense,
-                                ymax=high_sense),
-                                alpha=0.4, size=0) +
-                geom_line(aes(y=mid_sense))
-        }
-
         metagene = metagene +
+            geom_ribbon(aes(ymin=low,
+                            ymax=high,
+                            alpha=sampletype),
+                        size=0) +
+            geom_line(aes(y=mid,
+                          # alpha=sampletype,
+                          linetype=sampletype)) +
             scale_y_continuous(limits = c(NA, NA), name="normalized counts",
                                labels=function(x) abs(x)) +
             scale_color_ptol(guide=guide_legend(label.position=ifelse(groupvar %in% c("sampleanno", "groupanno"), "right", "top"),
                                                 label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5))) +
             scale_fill_ptol() +
-            ggtitle(if_else(strand != "both", paste(strand, assay, "signal"),
-                            paste(assay, "signal"))) +
+            scale_alpha_manual(values=c(0.4, 0.1),
+                               guide=guide_legend(label.position=ifelse(groupvar %in% c("sampleanno", "groupanno"), "right", "top"),
+                                                  label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5))) +
+            ggtitle(paste(factorlabel, "ChIP-seq", readtype)) +
             theme_light() +
             theme(text = element_text(size=12, color="black", face="bold"),
                   axis.text = element_text(size=12, color="black"),
@@ -206,7 +190,6 @@ main = function(in_path, samplelist, anno_paths, ptype, strand, upstream, dnstre
                 scale_color_colorblind(guide=guide_legend(label.position="top", label.hjust=0.5)) +
                 scale_fill_colorblind()
         }
-
         return(metagene)
     }
 
@@ -322,24 +305,15 @@ main = function(in_path, samplelist, anno_paths, ptype, strand, upstream, dnstre
         return(new_grob)
     }
 
-    strip_strand = function(ss){
-        words = strsplit(ss, "-")[[1]]
-        return(paste(words[1:length(words)-1], collapse="-"))
-    }
-
-    import = function(path, strand){
-        read_tsv(path, col_names=c("group", "sample", "annotation", "index", "position","cpm")) %>%
-        mutate(strand=strand) %>%
-        filter((sample %in% samplelist | sample %in% lapply(cluster_samples, strip_strand)) & !is.na(cpm))
-    }
-
-    df = import(in_path, strand=readtype) %>%
+    df = read_tsv(in_path, col_names = c("group", "sample", "sampletype", "annotation", "index", "position", "cpm")) %>%
+        filter((sample %in% samplelist | sample %in% cluster_samples) & !is.na(cpm)) %>%
         group_by(annotation) %>%
-        mutate(annotation_labeled = paste(n_distinct(index), annotation)) %>%
+        mutate(annotation_labeled = paste(n_distinct(index), annotation),
+               sampletype = ordered(sampletype, levels=c("input", "ChIP"))) %>%
         ungroup() %>%
         mutate(annotation = annotation_labeled) %>%
         select(-annotation_labeled)%>%
-        mutate_at(vars(group, sample, annotation, strand), funs(fct_inorder(., ordered=TRUE)))
+        mutate_at(vars(group, sample, annotation), funs(fct_inorder(., ordered=TRUE)))
 
     #get replicate info for sample facetting
     repl_df = df %>%
@@ -381,18 +355,18 @@ main = function(in_path, samplelist, anno_paths, ptype, strand, upstream, dnstre
             rr = df %>%
                 filter(annotation==annotations[i] & sample %in% cluster_samples &
                        between(position, cluster_five/1000, cluster_three/1000)) %>%
-                group_by(group, annotation, index, position, strand) %>%
+                group_by(group, sampletype, annotation, index, position) %>%
                 summarise(cpm=mean(cpm))
             # if specified, rescale data for each index 0 to 1
             if (cluster_scale){
                 rr %<>%
-                    group_by(group, annotation, index, strand) %>%
-                    mutate(cpm = scales::rescale(cpm)) %>%
-                    ungroup()
+                    group_by(group, annotation, index) %>%
+                    mutate(cpm = scales::rescale(cpm))
             }
             rr %<>%
-                select(-c(group, annotation, replicate)) %>%
-                unite(cid, c(sample, position), sep="~") %>%
+                ungroup() %>%
+                select(-annotation) %>%
+                unite(cid, c(group, sampletype, position), sep="~") %>%
                 spread(cid, cpm, fill=0) %>%
                 select(-index)
 
@@ -479,8 +453,9 @@ main = function(in_path, samplelist, anno_paths, ptype, strand, upstream, dnstre
         quantile(probs=pct_cutoff, na.rm=TRUE)
 
     df_group = df %>%
-        group_by(group, annotation, position, cluster, new_index, strand) %>%
-        summarise(cpm = mean(cpm)) %>% ungroup() %>%
+        group_by(group, annotation, position, cluster, new_index, sampletype) %>%
+        summarise(cpm = mean(cpm)) %>%
+        ungroup() %>%
         mutate(cluster = fct_inorder(paste("cluster", cluster), ordered=TRUE))
     group_cutoff = df_group %>%
         filter(cpm > 0) %>%
@@ -491,74 +466,92 @@ main = function(in_path, samplelist, anno_paths, ptype, strand, upstream, dnstre
     # (only for heatmaps, don't want to influence metagene values)
     if (sortmethod != "length"){
         df_sample %<>%
-            group_by(group, sample, annotation, strand, replicate, cluster) %>%
+            group_by(group, sample, annotation, sampletype, replicate, cluster) %>%
             complete(new_index, position, fill=list(cpm=min(df_sample[["cpm"]]))) %>%
             ungroup()
         df_group %<>%
-            group_by(group, annotation, cluster, strand) %>%
+            group_by(group, annotation, cluster, sampletype) %>%
             complete(new_index, position, fill=list(cpm=min(df_group[["cpm"]]))) %>%
             ungroup()
     }
 
-    heatmap_sample = hmap(df_sample, sample_cutoff, strand=strand, logtxn=log_transform)
-    heatmap_group = hmap(df_group, group_cutoff, strand=strand, logtxn=log_transform)
+    heatmap_sample = hmap(df_sample, sample_cutoff, readtype=readtype, logtxn=log_transform)
+    heatmap_group = hmap(df_group, group_cutoff, readtype=readtype, logtxn=log_transform)
 
     if (n_anno==1 && max(k)==1){
         heatmap_sample = heatmap_sample +
                 ylab(annotations[1]) +
-                facet_grid(replicate ~ group, scales="free_y", space="free_y") +
+                facet_grid(replicate ~ group + sampletype, scales="free_y", space="free_y") +
                 theme(axis.title.y = element_text(size=16, face="bold", color="black", angle=90),
-                      strip.text.y = element_text(size=16, face="bold", color="black"))
+                      strip.text.y = element_text(size=16, face="bold", color="black"),
+                      strip.background = element_rect(fill="white", size=0))
         heatmap_sample %<>% nest_top_facets(inner="strand")
 
         heatmap_group = heatmap_group +
-            facet_grid(.~group) +
+            facet_grid(. ~ group + sampletype) +
             ylab(annotations[1]) +
-            theme(axis.title.y = element_text(size=16, face="bold", color="black", angle=90))
+            theme(axis.title.y = element_text(size=16, face="bold", color="black", angle=90),
+                  strip.background = element_rect(fill="white", size=0))
+        heatmap_group %<>% nest_top_facets(inner="strand")
 
     } else if (n_anno==1 && max(k)>1){
         heatmap_sample = heatmap_sample +
             ylab(annotations[1]) +
-            facet_grid(replicate + cluster ~ group, scales="free_y", space="free_y") +
+            facet_grid(replicate + cluster ~ group + sampletype, scales="free_y", space="free_y") +
             theme(axis.title.y = element_text(size=16, face="bold", color="black", angle=90),
                   strip.text.y = element_text(size=12, face="bold", color="black"),
                   strip.background = element_rect(fill="white", size=0))
-        heatmap_sample %<>% nest_right_facets(level=2, outer="replicate", inner="cluster")
+        heatmap_sample %<>%
+            nest_right_facets(level=2, outer="replicate", inner="cluster") %>%
+            nest_top_facets(inner="strand", intype="gtable")
 
         heatmap_group = heatmap_group +
             ylab(annotations[1]) +
-            facet_grid(cluster ~ group, scales="free_y", space="free_y") +
-            theme(axis.title.y = element_text(size=16, face="bold", color="black", angle=90))
+            facet_grid(cluster ~ group + sampletype, scales="free_y", space="free_y") +
+            theme(axis.title.y = element_text(size=16, face="bold", color="black", angle=90),
+                  strip.background = element_rect(fill="white", size=0))
+        heatmap_group %<>%
+            nest_top_facets(inner="strand")
 
     } else if (n_anno>1 && max(k)==1){
         heatmap_sample = heatmap_sample +
-            facet_grid(replicate + annotation ~ group, scales="free_y", space="free_y") +
+            facet_grid(replicate + annotation ~ group + sampletype, scales="free_y", space="free_y") +
             theme(strip.text.y = element_text(size=12, face="bold", color="black"),
                   strip.background = element_rect(fill="white", size=0))
-        heatmap_sample %<>% nest_right_facets(level=2, outer="replicate")
+        heatmap_sample %<>%
+            nest_right_facets(level=2, outer="replicate") %>%
+            nest_top_facets(inner="strand", intype="gtable")
 
         heatmap_group = heatmap_group +
-            facet_grid(annotation ~ group, scales="free_y", space="free_y")
+            facet_grid(annotation ~ group + sampletype, scales="free_y", space="free_y") +
+            theme(strip.background = element_rect(fill="white", size=0))
+        heatmap_group %<>%
+            nest_top_facets(inner="strand")
 
     } else if (n_anno>1 && max(k)>1){
         heatmap_sample = heatmap_sample +
-            facet_grid(replicate + annotation + cluster ~ group,
+            facet_grid(replicate + annotation + cluster ~ group + sampletype,
                        scales="free_y", space="free_y") +
             theme(strip.text.y = element_text(size=12, face="bold", color="black"),
                   strip.background = element_rect(fill="white", size=0))
-        heatmap_sample %<>% nest_right_facets(level=3)
+        heatmap_sample %<>%
+            nest_right_facets(level=3) %>%
+            nest_top_facets(inner="strand", intype="gtable")
 
         heatmap_group = heatmap_group +
-            facet_grid(annotation + cluster ~ group, scales="free_y", space="free_y") +
+            facet_grid(annotation + cluster ~ group + strand, scales="free_y", space="free_y") +
             theme(strip.text.y = element_text(size=16, face="bold", color="black"),
                   strip.background = element_rect(fill="white", size=0))
-        heatmap_group %<>% nest_right_facets(level=2, outer="annotation")
+        heatmap_group %<>%
+            nest_right_facets(level=2, outer="annotation") %>%
+            nest_top_facets(inner="strand", intype="gtable")
     }
-    ggsave(heatmap_sampleout, plot=heatmap_sample, width=2+18*n_groups, height=10+10*max_reps, units="cm", limitsize=FALSE)
-    ggsave(heatmap_groupout, plot=heatmap_group, width=2+18*n_groups, height=30, units="cm", limitsize=FALSE)
+    ggsave(heatmap_sample_out, plot=heatmap_sample, width=2+18*n_groups, height=10+10*max_reps, units="cm", limitsize=FALSE)
+    ggsave(heatmap_group_out, plot=heatmap_group, width=2+18*n_groups, height=30, units="cm", limitsize=FALSE)
 
     metadf_sample = df %>%
-        group_by(group, sample, annotation, position, cluster, replicate)
+        group_by(group, sample, sampletype,
+                 annotation, position, cluster, replicate)
 
     if (spread_type=="conf_int"){
         metadf_sample %<>%
@@ -569,7 +562,7 @@ main = function(in_path, samplelist, anno_paths, ptype, strand, upstream, dnstre
 
         #with SD correction for small sample sizes (Gurland and Tripathi 1971)
         metadf_group = metadf_sample %>%
-            group_by(group, annotation, position, cluster) %>%
+            group_by(group, sampletype, annotation, position, cluster) %>%
             summarise(sd = sd(mid),
                       n = n_distinct(replicate),
                       mid = mean(mid)) %>%
@@ -582,7 +575,7 @@ main = function(in_path, samplelist, anno_paths, ptype, strand, upstream, dnstre
                       high = quantile(cpm, probs=(1-trim_pct)))
 
         metadf_group = df %>%
-            group_by(group, annotation, position, cluster) %>%
+            group_by(group, sampletype, annotation, position, cluster) %>%
             summarise(mid = median(cpm),
                       low = quantile(cpm, probs=trim_pct),
                       high = quantile(cpm, probs=(1-trim_pct)))
@@ -599,129 +592,130 @@ main = function(in_path, samplelist, anno_paths, ptype, strand, upstream, dnstre
         arrange(cluster) %>%
         mutate(cluster = fct_inorder(paste("cluster", cluster), ordered=TRUE))
 
-    meta_sample_both = meta(metadf_sample, strand="both")
-    meta_group_both = meta(metadf_group, groupvar="group", strand="both")
-    meta_sampleclust_both = meta(metadf_sample, groupvar="sampleclust", strand="both")
-    meta_groupclust_both = meta(metadf_group, groupvar="groupclust", strand="both")
+    meta_sample = meta(metadf_sample)
+    meta_group = meta(metadf_group, groupvar="group")
+    meta_sampleclust = meta(metadf_sample, groupvar="sampleclust")
+    meta_groupclust = meta(metadf_group, groupvar="groupclust")
 
     if(max(k) > 1 | n_anno > 1){
-        meta_sampleanno_both = meta(metadf_sample, groupvar="sampleanno", strand="both")
-        meta_groupanno_both = meta(metadf_group, groupvar="groupanno", strand="both")
+        meta_sampleanno = meta(metadf_sample, groupvar="sampleanno")
+        meta_groupanno = meta(metadf_group, groupvar="groupanno")
     }
 
     if (n_anno==1 && max(k)==1){
-        meta_sample_both  = meta_sample_both +
+        meta_sample  = meta_sample +
             scale_color_manual(values=rep("#4477AA", 100)) +
             scale_fill_manual(values=rep("#4477AA", 100)) +
             facet_grid(replicate~group) +
-            # TODO: title based on readtype
-            ggtitle(if_else(strand != "both", paste(strand, assay, "signal"),
-                            paste(assay, "signal")),
+            ggtitle(paste(factorlabel, "ChIP-seq", readtype),
                     subtitle = annotations[1]) +
             theme(legend.position="none")
 
-        meta_sample_overlay_both = meta(metadf_sample) +
-            scale_color_ptol() +
-            ggtitle(if_else(strand != "both", paste(strand, assay, "signal"),
-                            paste(assay, "signal")),
+        meta_sample_overlay = meta(metadf_sample) +
+            ggtitle(paste(factorlabel, "ChIP-seq", readtype),
                     subtitle = annotations[1]) +
             theme(legend.position="right",
                   legend.key.width=unit(0.8, "cm"))
 
-        meta_group_both = meta_group_both +
-            scale_color_ptol() +
-            ggtitle(if_else(strand != "both", paste(strand, assay, "signal"),
-                            paste(assay, "signal")),
+        meta_group = meta_group +
+            ggtitle(paste(factorlabel, "ChIP-seq", readtype),
                     subtitle = annotations[1]) +
             theme(legend.position="right",
                   legend.key.width=unit(0.8, "cm"))
 
-        meta_sampleclust_both = meta_sampleclust_both +
+        meta_sampleclust = meta_sampleclust +
             facet_grid(. ~ group) +
-            ggtitle(if_else(strand != "both", paste(strand, assay, "signal"),
-                            paste(assay, "signal")),
+            ggtitle(paste(factorlabel, "ChIP-seq", readtype),
                     subtitle = annotations[1]) +
             theme(legend.position="right",
                   legend.key.width=unit(1, "cm"))
 
-        meta_groupclust_both = meta_groupclust_both +
+        meta_groupclust = meta_groupclust +
             facet_grid(. ~ group) +
-            ggtitle(if_else(strand != "both", paste(strand, assay, "signal"),
-                            paste(assay, "signal")),
+            ggtitle(paste(factorlabel, "ChIP-seq", readtype),
                     subtitle = annotations[1]) +
             theme(legend.position="right",
                   legend.key.width=unit(1, "cm"))
 
-        ggsave(meta_sample_both_out, plot = meta_sample_both, width=3+7*n_groups, height=2+5*max_reps, units="cm", limitsize=FALSE)
-        ggsave(meta_sample_overlay_both_out, plot = meta_sample_overlay_both, width=16, height=9, units="cm", limitsize=FALSE)
-        ggsave(meta_sampleanno_both_out, plot = meta_sample_overlay_both, width=16, height=9, units="cm", limitsize=FALSE)
-        ggsave(meta_group_both_out, plot = meta_group_both, width=16, height=9, units="cm", limitsize=FALSE)
-        ggsave(meta_groupanno_both_out, plot = meta_group_both, width=16, height=9, units="cm", limitsize=FALSE)
-        ggsave(meta_sampleclust_both_out, plot = meta_sampleclust_both, width=6+7*n_groups, height=10, units="cm", limitsize=FALSE)
-        ggsave(meta_groupclust_both_out, plot = meta_groupclust_both, width=6+7*n_groups, height=10, units="cm", limitsize=FALSE)
+        ggsave(meta_sample_out, plot = meta_sample, width=3+7*n_groups, height=2+5*max_reps, units="cm", limitsize=FALSE)
+        ggsave(meta_sample_overlay_out, plot = meta_sample_overlay, width=16, height=9, units="cm", limitsize=FALSE)
+        ggsave(meta_sampleanno_out, plot = meta_sample_overlay, width=16, height=9, units="cm", limitsize=FALSE)
+        ggsave(meta_group_out, plot = meta_group, width=16, height=9, units="cm", limitsize=FALSE)
+        ggsave(meta_groupanno_out, plot = meta_group, width=16, height=9, units="cm", limitsize=FALSE)
+        print("sixth")
+        ggsave(meta_sampleclust_out, plot = meta_sampleclust, width=6+7*n_groups, height=10, units="cm", limitsize=FALSE)
+        print("seventh")
+        ggsave(meta_groupclust_out, plot = meta_groupclust, width=6+7*n_groups, height=10, units="cm", limitsize=FALSE)
+        print("eighth")
     } else if (n_anno>1 && max(k)==1){
-        meta_sample_both = meta_sample_both + facet_grid(replicate ~ annotation)
+        meta_sample = meta_sample +
+            facet_grid(replicate ~ annotation)
 
-        meta_sample_overlay_both = meta_sample_both + facet_grid(.~annotation)
+        meta_sample_overlay = meta_sample +
+            facet_grid(.~annotation)
 
-        meta_group_both = meta_group_both + facet_grid(.~annotation)
+        meta_group = meta_group +
+            facet_grid(.~annotation)
 
-        meta_sampleanno_both = meta_sampleanno_both +
+        meta_sampleanno = meta_sampleanno +
             facet_grid(.~group) +
             theme(legend.direction="vertical")
 
-        meta_groupanno_both = meta_groupanno_both +
+        meta_groupanno = meta_groupanno +
             facet_grid(.~group) +
             theme(legend.direction="vertical")
 
-        meta_sampleclust_both = meta_sampleclust_both + facet_grid(annotation ~ group)
+        meta_sampleclust = meta_sampleclust +
+            facet_grid(annotation ~ group)
 
-        meta_groupclust_both = meta_groupclust_both + facet_grid(annotation ~ group)
+        meta_groupclust = meta_groupclust +
+            facet_grid(annotation ~ group)
 
     } else if (max(k)>1){
-        meta_sample_both = meta_sample_both +
+        meta_sample = meta_sample +
             facet_grid(replicate ~ annotation + cluster) +
             theme(strip.background = element_rect(fill="white", size=0))
-        meta_sample_both %<>% nest_top_facets(level=2)
+        meta_sample %<>% nest_top_facets(level=2)
 
-        meta_sample_overlay_both = meta(metadf_sample) +
+        meta_sample_overlay = meta(metadf_sample) +
             facet_grid(cluster ~ annotation)
 
-        meta_group_both = meta_group_both + facet_grid(cluster ~ annotation)
+        meta_group = meta_group +
+            facet_grid(cluster ~ annotation)
 
-        meta_sampleanno_both = meta_sampleanno_both +
+        meta_sampleanno = meta_sampleanno +
             facet_grid(.~group) +
             theme(legend.direction="vertical")
 
-        meta_groupanno_both = meta_groupanno_both +
+        meta_groupanno = meta_groupanno +
             facet_grid(.~group) +
             theme(legend.direction="vertical")
 
-        meta_sampleclust_both = meta_sampleclust_both +
+        meta_sampleclust = meta_sampleclust +
             facet_grid(annotation ~ group) +
             theme(legend.key.width=unit(2, "cm"))
 
-        meta_groupclust_both = meta_groupclust_both +
+        meta_groupclust = meta_groupclust +
             facet_grid(annotation ~ group) +
             theme(legend.key.width=unit(2, "cm"))
     }
 
     if (!(n_anno==1 && max(k)==1)){
-        ggsave(meta_sample_both_out, plot = meta_sample_both, width=3+6*sum(k), height=2+5*max_reps, units="cm", limitsize=FALSE)
-        ggsave(meta_sample_overlay_both_out, plot = meta_sample_overlay_both, width=3+7*n_anno, height=2+5*max(k), units="cm", limitsize=FALSE)
-        ggsave(meta_group_both_out, plot = meta_group_both, width=3+7*n_anno, height=2+5*max(k), units="cm", limitsize=FALSE)
-        ggsave(meta_sampleanno_both_out, plot = meta_sampleanno_both, width=3+7*n_groups, height=9+.75*sum(k), units="cm", limitsize=FALSE)
-        ggsave(meta_groupanno_both_out, plot = meta_groupanno_both, width=3+7*n_groups, height=9+.75*sum(k), units="cm", limitsize=FALSE)
-        ggsave(meta_sampleclust_both_out, plot = meta_sampleclust_both, width=3+7*n_groups, height=3+6*n_anno, units="cm", limitsize=FALSE)
-        ggsave(meta_groupclust_both_out, plot = meta_groupclust_both, width=3+7*n_groups, height=3+6*n_anno, units="cm", limitsize=FALSE)
+        ggsave(meta_sample_out, plot = meta_sample, width=3+6*sum(k), height=2+5*max_reps, units="cm", limitsize=FALSE)
+        ggsave(meta_sample_overlay_out, plot = meta_sample_overlay, width=3+7*n_anno, height=2+5*max(k), units="cm", limitsize=FALSE)
+        ggsave(meta_group_out, plot = meta_group, width=3+7*n_anno, height=2+5*max(k), units="cm", limitsize=FALSE)
+        ggsave(meta_sampleanno_out, plot = meta_sampleanno, width=3+7*n_groups, height=9+.75*sum(k), units="cm", limitsize=FALSE)
+        ggsave(meta_groupanno_out, plot = meta_groupanno, width=3+7*n_groups, height=9+.75*sum(k), units="cm", limitsize=FALSE)
+        ggsave(meta_sampleclust_out, plot = meta_sampleclust, width=3+7*n_groups, height=3+6*n_anno, units="cm", limitsize=FALSE)
+        ggsave(meta_groupclust_out, plot = meta_groupclust, width=3+7*n_groups, height=3+6*n_anno, units="cm", limitsize=FALSE)
     }
 }
 
-main(in_path = snakemake@input[["matrices"]],
+main(in_path = snakemake@input[["matrix"]],
      samplelist = snakemake@params[["samplelist"]],
      anno_paths = snakemake@input[["annotations"]],
      ptype = snakemake@params[["plottype"]],
-     strand = snakemake@wildcards[["strand"]],
+     readtype = snakemake@wildcards[["readtype"]],
      upstream = snakemake@params[["upstream"]],
      dnstream = snakemake@params[["dnstream"]],
      scaled_length = snakemake@params[["scaled_length"]],
@@ -742,13 +736,13 @@ main(in_path = snakemake@input[["matrices"]],
      k = snakemake@params[["k"]],
      heatmap_sample_out = snakemake@output[["heatmap_sample"]],
      heatmap_group_out = snakemake@output[["heatmap_group"]],
-     meta_sampleout = snakemake@output[["metagene_sample"]],
-     meta_sample_overlayout = snakemake@output[["metagene_sample_overlay"]],
-     meta_sampleannoout = snakemake@output[["metagene_sampleanno"]],
-     meta_groupannoout = snakemake@output[["metagene_groupanno"]],
-     meta_groupout = snakemake@output[["metagene_group"]],
-     meta_sampleclustout = snakemake@output[["metagene_sampleclust"]],
-     meta_groupclustout = snakemake@output[["metagene_groupclust"]],
+     meta_sample_out = snakemake@output[["meta_sample"]],
+     meta_sample_overlay_out = snakemake@output[["meta_sample_overlay"]],
+     meta_sampleanno_out = snakemake@output[["meta_sampleanno"]],
+     meta_groupanno_out = snakemake@output[["meta_groupanno"]],
+     meta_group_out = snakemake@output[["meta_group"]],
+     meta_sampleclust_out = snakemake@output[["meta_sampleclust"]],
+     meta_groupclust_out = snakemake@output[["meta_groupclust"]],
      anno_out = snakemake@params[["annotations_out"]],
      cluster_out = snakemake@params[["clusters_out"]])
 
