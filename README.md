@@ -1,5 +1,5 @@
 
-# MNase-seq analysis pipeline
+# ChIP-seq analysis pipeline
 
 ## description
 
