@@ -12,8 +12,6 @@ rule crosslink_coverage:
         strand="plus|minus"
     log:
         "logs/crosslink_coverage/crosslink_coverage-{sample}-{counttype}-{strand}-{factor}.log"
-    group:
-        "coverage"
     shell: """
         (bedtools genomecov -bga -5 -strand {params.strand_symbol} -ibam {input} | LC_COLLATE=C sort -k1,1 -k2,2n > {output}) &> {log}
         """
@@ -30,8 +28,6 @@ rule protection_coverage:
         counttype="counts|sicounts"
     log:
         "logs/genome_coverage/genome_coverage-{sample}-{counttype}-protection-{factor}.log"
-    group:
-        "coverage"
     shell: """
         median_fragsize=$(grep -e "^# d = " {input.tsv} | cut -d ' ' -f4 | sort -k1,1n | awk '{{count[NR]=$1;}} END{{if (NR % 2) {{print count[(NR+1)/2]}} else {{print (count[(NR/2)] + count[(NR/2)+1]) / 2.0;}} }}' | xargs printf "%.*f\n" 0)
         (bedtools genomecov -bga -fs $median_fragsize -scale $(echo 1/$median_fragsize | bc -l) -ibam {input.bam} | LC_COLLATE=C sort -k1,1 -k2,2n > {output}) &> {log}
@@ -51,8 +47,6 @@ rule midpoint_coverage:
         counttype="counts|sicounts"
     log:
         "logs/genome_coverage/genome_coverage-{sample}-{counttype}-midpoints-{factor}.log"
-    group:
-        "coverage"
     shell: """
         half_median_fragsize=$(grep -e "^# d = " {input.tsv} | cut -d ' ' -f4 | sort -k1,1n | awk '{{count[NR]=$1;}} END{{if (NR % 2) {{print count[(NR+1)/2]/2.0}} else {{print (count[(NR/2)] + count[(NR/2)+1]) / 4.0;}} }}' | xargs printf "%.*f\n" 0)
         (bedtools unionbedg -i <(bedtools shift -i {input.plus} -g <(faidx {input.fasta} -i chromsizes) -s $half_median_fragsize) <(bedtools shift -i {input.minus} -g <(faidx {input.fasta} -i chromsizes) -s -$half_median_fragsize) -g <(faidx {input.fasta} -i chromsizes) -empty | awk 'BEGIN{{FS=OFS="\t"}}{{print $1, $2, $3, $4+$5}}' > {output}) &> {log}
@@ -71,8 +65,6 @@ rule normalize_genome_coverage:
         strand="plus|minus|protection|midpoints"
     log:
         "logs/normalize_genome_coverage/normalize_genome_coverage-{sample}-{norm}-{strand}-{factor}.log"
-    group:
-        "coverage"
     shell: """
         (awk -v norm_factor=$(samtools view -c {input.bam} | paste -d "" - <(echo "/({params.scale_factor}*1000000)") | bc -l) 'BEGIN{{FS=OFS="\t"}}{{$4=$4/norm_factor; print $0}}' {input.counts} > {output.normalized}) &> {log}
         """
@@ -102,8 +94,6 @@ rule bedgraph_to_bigwig:
         strand="plus|minus|midpoints|protection|SENSE|ANTISENSE"
     log :
         "logs/bedgraph_to_bigwig/bedgraph_to_bigwig-{sample}-{norm}-{strand}-{factor}.log"
-    group:
-        "coverage"
     shell: """
         (bedGraphToBigWig {input.bg} <(faidx {input.fasta} -i chromsizes {params.stranded}) {output}) &> {log}
         """
