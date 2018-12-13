@@ -8,7 +8,7 @@ __default__ :
     err : "logs/cluster/{rule}.{wildcards}.err"
 
 fastqc_pre_and_unaligned:
-    time : 20
+    time : 15
     n : 2
     mem : 200
 
@@ -33,12 +33,12 @@ align:
     mem : 1000
 
 bam_separate_species:
-    time: 3
+    time: 5
     mem: 50
 
 crosslink_coverage:
     time : 4
-    mem : 75
+    mem : 100
 
 protection_coverage:
     time : 4
