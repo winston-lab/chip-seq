@@ -33,23 +33,23 @@ align:
     mem : 1000
 
 bam_separate_species:
-    time: 3
+    time: 4
     mem: 50
 
 crosslink_coverage:
     time : 4
-    mem : 75
+    mem : 100
 
 protection_coverage:
-    time : 4
+    time : 5
     mem : 100
 
 midpoint_coverage:
-    time : 3
+    time : 4
     mem : 75
 
 normalize_genome_coverage:
-    time : 4
+    time : 5
     mem : 50
 
 make_stranded_bedgraph:
@@ -58,7 +58,7 @@ make_stranded_bedgraph:
 
 bedgraph_to_bigwig:
     time : 2
-    mem : 2
+    mem : 7
 
 callpeaks_macs2:
     time : 15
@@ -82,5 +82,5 @@ compute_matrix:
 
 plot_figures:
     time : 40
-    mem : 10000
+    mem : 16000
 
