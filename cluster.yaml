@@ -28,7 +28,7 @@ clean_reads:
     mem : 150
 
 align:
-    time : 15
+    time : 25
     n : 4
     mem : 1000
 
