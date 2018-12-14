@@ -58,7 +58,7 @@ make_stranded_bedgraph:
 
 bedgraph_to_bigwig:
     time : 2
-    mem : 7
+    mem : 25
 
 callpeaks_macs2:
     time : 15
