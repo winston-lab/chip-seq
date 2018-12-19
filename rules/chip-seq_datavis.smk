@@ -20,8 +20,10 @@ rule compute_matrix:
         binstat = lambda wc: FIGURES[wc.figure]["parameters"]["binstat"],
         nan_afterend = lambda wc: [] if FIGURES[wc.figure]["parameters"]["type"]=="scaled" or not FIGURES[wc.figure]["parameters"]["nan_afterend"] else "--nanAfterEnd",
         anno_label = lambda wc: FIGURES[wc.figure]["annotations"][wc.annotation]["label"]
-    threads : config["threads"]
-    log: "logs/compute_matrix/compute_matrix-{figure}_{annotation}_{sample}-{sampletype}-{norm}-{strand}.log"
+    threads:
+        config["threads"]
+    log:
+        "logs/compute_matrix/compute_matrix-{figure}_{annotation}_{sample}-{sampletype}-{norm}-{strand}.log"
     run:
         if FIGURES[wildcards.figure]["parameters"]["type"]=="absolute":
             shell("""(computeMatrix reference-point -R {input.annotation} -S {input.bw} --referencePoint {params.refpoint} -out {output.dtfile} --outFileNameMatrix {output.matrix} -b {params.upstream} -a {params.dnstream} {params.nan_afterend} --binSize {params.binsize} --averageTypeBins {params.binstat} -p {threads}) &> {log}""")
@@ -32,10 +34,11 @@ rule compute_matrix:
 
 rule cat_matrices:
     input:
-        lambda wc: expand("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}-melted.tsv.gz", annotation=list(FIGURES[wc.figure]["annotations"].keys()), sample=CHIPS if wc.norm=="libsizenorm" else CHIPS_SISAMPLES, sampletype=["ChIP", "input"], figure=wc.figure, norm=wc.norm, strand=wc.strand)
+        lambda wc: expand("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}-melted.tsv.gz", annotation=list(FIGURES[wc.figure]["annotations"].keys()), sample=CHIPS if wc.norm=="libsizenorm" else CHIPS_SISAMPLES, sampletype=["ChIP"] + (["input"] if "-input-subtracted" not in wc.strand else []), figure=wc.figure, norm=wc.norm, strand=wc.strand)
     output:
         "datavis/{figure}/{norm}/{figure}-allsamples-allannotations-{factor}-chipseq-{norm}-{strand}.tsv.gz"
-    log: "logs/cat_matrices/cat_matrices-{figure}_{norm}-{strand}-{factor}.log"
+    log:
+        "logs/cat_matrices/cat_matrices-{figure}_{norm}-{strand}-{factor}.log"
     shell: """
         (cat {input} > {output}) &> {log}
         """

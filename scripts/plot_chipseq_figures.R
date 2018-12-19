@@ -645,11 +645,8 @@ main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnst
         ggsave(meta_sampleanno_out, plot = meta_sample_overlay, width=16, height=9, units="cm", limitsize=FALSE)
         ggsave(meta_group_out, plot = meta_group, width=16, height=9, units="cm", limitsize=FALSE)
         ggsave(meta_groupanno_out, plot = meta_group, width=16, height=9, units="cm", limitsize=FALSE)
-        print("sixth")
         ggsave(meta_sampleclust_out, plot = meta_sampleclust, width=6+7*n_groups, height=10, units="cm", limitsize=FALSE)
-        print("seventh")
         ggsave(meta_groupclust_out, plot = meta_groupclust, width=6+7*n_groups, height=10, units="cm", limitsize=FALSE)
-        print("eighth")
     } else if (n_anno>1 && max(k)==1){
         meta_sample = meta_sample +
             facet_grid(replicate ~ annotation)

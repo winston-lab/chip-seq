@@ -55,18 +55,39 @@ rule midpoint_coverage:
 rule normalize_genome_coverage:
     input:
         counts = "coverage/counts/{sample}_{factor}-chipseq-counts-{strand}.bedgraph",
-        bam = lambda wc: "alignment/{sample}_{factor}-chipseq-uniquemappers-".format(**wc) + ("experimental" if wc.norm=="libsizenorm" else "spikein") + ".bam",
+        bam_experimental = "alignment/{sample}_{factor}-chipseq-uniquemappers-experimental.bam",
+        bam_spikein = lambda wc: "alignment/{sample}_{factor}-chipseq-uniquemappers-spikein.bam" if wc.norm=="spikenorm" and wc.sample in CHIPS else [],
+        input_bam_experimental = lambda wc: "alignment/{sample}_{factor}-chipseq-uniquemappers-experimental.bam".format(sample=CHIPS[wc.sample]["input"], factor=wc.factor) if wc.norm=="spikenorm" and wc.sample in CHIPS else [],
+        input_bam_spikein = lambda wc: "alignment/{sample}_{factor}-chipseq-uniquemappers-spikein.bam".format(sample=CHIPS[wc.sample]["input"], factor=wc.factor) if wc.norm=="spikenorm" and wc.sample in CHIPS else []
     output:
         normalized = "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{strand}.bedgraph",
-    params:
-        scale_factor = lambda wc: config["spike_in"]["proportion"] if wc.norm=="spikenorm" else 1
     wildcard_constraints:
         norm="libsizenorm|spikenorm",
         strand="plus|minus|protection|midpoints"
     log:
         "logs/normalize_genome_coverage/normalize_genome_coverage-{sample}-{norm}-{strand}-{factor}.log"
+    run:
+        if wildcards.norm=="libsizenorm" or wildcards.sample in INPUTS:
+            shell("""
+                  (awk -v norm_factor=$(samtools view -c {input.bam_experimental} | paste -d "" - <(echo "/1000000") | bc -l) 'BEGIN{{FS=OFS="\t"}}{{$4=$4/norm_factor; print $0}}' {input.counts} > {output.normalized}) &> {log}
+                  """)
+        else:
+            shell("""
+                  (awk -v norm_factor=$(paste -d "" \
+                          <(samtools view -c {input.bam_spikein}) <(echo "*") \
+                          <(samtools view -c {input.input_bam_experimental}) <(echo "/") \
+                          <(samtools view -c {input.input_bam_spikein}) <(echo "/1000000") | bc -l) \
+                          'BEGIN{{FS=OFS="\t"}}{{$4=$4/norm_factor; print $0}}' {input.counts} > {output.normalized}) &> {log}
+                  """)
+
+rule subtract_inputs:
+    input:
+        ip_sample = "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{strand}.bedgraph",
+        input_sample = lambda wc: f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bedgraph".format(sample=CHIPS[wc.sample]["input"]),
+    output:
+        "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{strand}-input-subtracted.bedgraph",
     shell: """
-        (awk -v norm_factor=$(samtools view -c {input.bam} | paste -d "" - <(echo "/({params.scale_factor}*1000000)") | bc -l) 'BEGIN{{FS=OFS="\t"}}{{$4=$4/norm_factor; print $0}}' {input.counts} > {output.normalized}) &> {log}
+        bedtools unionbedg -i {input.ip_sample} {input.input_sample} | awk 'BEGIN{{FS=OFS="\t"}}{{print $1, $2, $3, $4-$5}}' > {output}
         """
 
 # rule make_stranded_bedgraph:
@@ -90,8 +111,6 @@ rule bedgraph_to_bigwig:
         "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{strand}.bw"
     params:
         stranded = lambda wc: [] if wc.strand not in ["SENSE", "ANTISENSE"] else """| awk 'BEGIN{{FS=OFS="\t"}}{{print $1"-plus", $2; print $1"-minus", $2}}' | LC_COLLATE=C sort -k1,1"""
-    wildcard_constraints:
-        strand="plus|minus|midpoints|protection|SENSE|ANTISENSE"
     log :
         "logs/bedgraph_to_bigwig/bedgraph_to_bigwig-{sample}-{norm}-{strand}-{factor}.log"
     shell: """

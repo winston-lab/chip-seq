@@ -23,13 +23,13 @@ plot_fastqc_summary:
     mem: 400
 
 clean_reads:
-    time : 15
-    n : 4
-    mem : 150
+    time: 15
+    n: 4
+    mem: 150
 
 align:
     time : 25
-    n : 4
+    n: 4
     mem : 1000
 
 bam_separate_species:
@@ -37,32 +37,36 @@ bam_separate_species:
     mem: 50
 
 crosslink_coverage:
-    time : 4
-    mem : 100
+    time: 4
+    mem: 100
 
 protection_coverage:
-    time : 5
-    mem : 100
+    time: 5
+    mem: 100
 
 midpoint_coverage:
-    time : 4
-    mem : 75
+    time: 4
+    mem: 75
 
 normalize_genome_coverage:
-    time : 5
-    mem : 50
+    time: 5
+    mem: 50
+
+subtract_inputs:
+    time: 5
+    mem: 40
 
 make_stranded_bedgraph:
     time: 3
     mem: 50
 
 bedgraph_to_bigwig:
-    time : 2
-    mem : 25
+    time: 2
+    mem: 25
 
 callpeaks_macs2:
-    time : 15
-    mem : 1000
+    time: 15
+    mem: 1000
 
 map_to_windows:
     time: 7
@@ -73,14 +77,14 @@ join_window_counts:
     mem: 4000
 
 plot_scatter_plots:
-    time : 20
-    mem : 10000
+    time: 20
+    mem: 10000
 
 compute_matrix:
-    time : 10
-    mem : 2000
+    time: 10
+    mem: 2000
 
 plot_figures:
-    time : 40
-    mem : 20000
+    time: 40
+    mem: 20000
 
