@@ -63,6 +63,7 @@ rule plot_figures:
         clusters_out = lambda wc: ["datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/".format(**wc) + annotation + ".pdf" for annotation in FIGURES[wc.figure]["annotations"]],
         samplelist = lambda wc: get_samples(wc.status, wc.norm, [wc.condition, wc.control]),
         plottype = lambda wc: FIGURES[wc.figure]["parameters"]["type"],
+        readtype = lambda wc: wc.readtype.split("-")[0] + ", input subtracted" if "subtracted" in wc.readtype else wc.readtype,
         upstream = lambda wc: FIGURES[wc.figure]["parameters"]["upstream"],
         dnstream = lambda wc: FIGURES[wc.figure]["parameters"]["dnstream"],
         scaled_length = lambda wc: 0 if FIGURES[wc.figure]["parameters"]["type"]=="absolute" else FIGURES[wc.figure]["parameters"]["scaled_length"],

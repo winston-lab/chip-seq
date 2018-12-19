@@ -32,24 +32,27 @@ rule plot_read_processing:
 
 rule build_spikein_counts_table:
     input:
-        # TODO: handle spikeins for input samples
-        # total_bam = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers.bam", sample=SISAMPLES),
-        # exp_bam = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-experimental.bam", sample=SISAMPLES),
-        # si_bam = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-spikein.bam", sample=SISAMPLES),
-        total_bam = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers.bam", sample=CHIPS_SISAMPLES),
-        exp_bam = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-experimental.bam", sample=CHIPS_SISAMPLES),
-        si_bam = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-spikein.bam", sample=CHIPS_SISAMPLES),
+        ip_bam_experimental = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-experimental.bam", sample=CHIPS_SISAMPLES),
+        ip_bam_spikein = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-spikein.bam", sample=CHIPS_SISAMPLES),
+        input_bam_experimental = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-experimental.bam", sample=[v["input"] for k,v in CHIPS_SISAMPLES.items()]),
+        input_bam_spikein = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-spikein.bam", sample=[v["input"] for k,v in CHIPS_SISAMPLES.items()])
     output:
         f"qual_ctrl/spikein/{FACTOR}-chipseq_spikein-counts.tsv"
     params:
-        # groups = [v["group"] for k,v in SISAMPLES.items()]
         groups = [v["group"] for k,v in CHIPS_SISAMPLES.items()]
     log: "logs/build_spikein_counts_table.log"
     run:
-        shell("""(echo -e "sample\tgroup\ttotal_counts\texperimental_counts\tspikein_counts" > {output}) &> {log} """)
-        # for sample, group, total, exp, si in zip(SISAMPLES.keys(), params.groups, input.total_bam, input.exp_bam, input.si_bam):
-        for sample, group, total, exp, si in zip(CHIPS_SISAMPLES.keys(), params.groups, input.total_bam, input.exp_bam, input.si_bam):
-            shell("""(paste <(echo -e "{sample}\t{group}") <(samtools view -c {total}) <(samtools view -c {exp}) <(samtools view -c {si}) >> {output}) &>> {log} """)
+        shell("""(echo -e "sample\tgroup\ttotal_counts_input\texperimental_counts_input\tspikein_counts_input\ttotal_counts_IP\texperimental_counts_IP\tspikein_counts_IP" > {output}) &> {log} """)
+        for sample, group, input_exp, input_si ,ip_exp, ip_si in zip(CHIPS_SISAMPLES.keys(), params.groups,
+                                                                     input.input_bam_experimental, input.input_bam_spikein,
+                                                                     input.ip_bam_experimental, input.ip_bam_spikein):
+            shell("""(paste <(echo -e "{sample}\t{group}\t") \
+                        <(samtools view -c {input_exp}) \
+                        <(samtools view -c {input_si}) \
+                        <(echo "") \
+                        <(samtools view -c {ip_exp}) \
+                        <(samtools view -c {ip_si}) | \
+                        awk 'BEGIN{{FS=OFS="\t"}} {{$3=$4+$5; $6=$7+$8; print $0}}'>> {output}) &>> {log} """)
 
 rule plot_spikein_pct:
     input:
@@ -58,10 +61,11 @@ rule plot_spikein_pct:
         plot = f"qual_ctrl/spikein/{FACTOR}-chipseq_spikein-plots-{{status}}.svg",
         stats = f"qual_ctrl/spikein/{FACTOR}-chipseq_spikein-stats-{{status}}.tsv"
     params:
-        # samplelist = lambda wc : list(SISAMPLES.keys()) if wc.status=="all" else list(SIPASSING.keys()),
         samplelist = lambda wc : list(CHIPS_SISAMPLES.keys()) if wc.status=="all" else list(CHIPS_SIPASSING.keys()),
         conditions = conditiongroups_si if comparisons_si else [],
         controls = controlgroups_si if comparisons_si else []
-    conda: "../envs/tidyverse.yaml"
-    script: "../scripts/plot_si_pct.R"
+    conda:
+        "../envs/tidyverse.yaml"
+    script:
+        "../scripts/spikein_abundance_chipseq.R"
 

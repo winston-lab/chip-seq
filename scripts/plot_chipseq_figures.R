@@ -39,7 +39,9 @@ main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnst
                                    name = bquote(bold(log[2] ~ .(factorlabel) ~ "ChIP-seq" ~ .(readtype))),
                                    limits = c(NA, flimit), oob=scales::squish,
                                    guide=guide_colorbar(title.position="top",
-                                                        barwidth=20, barheight=1, title.hjust=0.5))
+                                                        barwidth=20,
+                                                        barheight=1,
+                                                        title.hjust=0.5))
         } else {
             heatmap_base = heatmap_base +
                 geom_raster(aes(x=position, y=new_index, fill=cpm), interpolate=FALSE) +
@@ -94,7 +96,7 @@ main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnst
         return(heatmap_base)
     }
 
-    meta = function(df, groupvar="sample"){
+    meta = function(df, groupvar="sample", strand="protection"){
         if (groupvar=="sample"){
             metagene = ggplot(data = df, aes(x=position,
                                              group=interaction(sample, sampletype),
@@ -133,25 +135,34 @@ main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnst
                 geom_vline(xintercept = scaled_length/1000, size=1, color="grey65")
         }
 
-        metagene = metagene +
-            geom_ribbon(aes(ymin=low,
-                            ymax=high,
-                            alpha=sampletype),
-                        size=0) +
+        if (str_detect(readtype, "subtracted")){
+            metagene = metagene +
+                geom_ribbon(aes(ymin=low,
+                                ymax=high),
+                            size=0, alpha=0.4) +
+            geom_line(aes(y=mid))
+        } else {
+            metagene = metagene +
+                geom_ribbon(aes(ymin=low,
+                                ymax=high,
+                                alpha=sampletype),
+                            size=0) +
             geom_line(aes(y=mid,
-                          # alpha=sampletype,
                           linetype=sampletype)) +
-            scale_y_continuous(limits = c(NA, NA), name="normalized counts",
-                               labels=function(x) abs(x)) +
-            scale_color_ptol(guide=guide_legend(label.position=ifelse(groupvar %in% c("sampleanno", "groupanno"), "right", "top"),
-                                                label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5))) +
-            scale_fill_ptol() +
             scale_linetype_manual(values = c("dashed", "solid"),
                                   guide=guide_legend(label.position=ifelse(groupvar %in% c("sampleanno", "groupanno"), "right", "top"),
                                                      label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5))) +
             scale_alpha_manual(values=c(0.1, 0.4),
                                guide=guide_legend(label.position=ifelse(groupvar %in% c("sampleanno", "groupanno"), "right", "top"),
-                                                  label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5))) +
+                                                  label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5)))
+        }
+
+        metagene = metagene +
+            scale_y_continuous(limits = c(NA, NA), name="normalized counts",
+                               labels=function(x) abs(x)) +
+            scale_color_ptol(guide=guide_legend(label.position=ifelse(groupvar %in% c("sampleanno", "groupanno"), "right", "top"),
+                                                label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5))) +
+            scale_fill_ptol() +
             ggtitle(paste(factorlabel, "ChIP-seq", readtype)) +
             theme_light() +
             theme(text = element_text(size=12, color="black", face="bold"),
@@ -484,70 +495,126 @@ main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnst
     if (n_anno==1 && max(k)==1){
         heatmap_sample = heatmap_sample +
                 ylab(annotations[1]) +
-                facet_grid(replicate ~ group + sampletype, scales="free_y", space="free_y") +
                 theme(axis.title.y = element_text(size=16, face="bold", color="black", angle=90),
                       strip.text.y = element_text(size=16, face="bold", color="black"),
                       strip.background = element_rect(fill="white", size=0))
-        heatmap_sample %<>% nest_top_facets(inner="strand")
 
         heatmap_group = heatmap_group +
-            facet_grid(. ~ group + sampletype) +
             ylab(annotations[1]) +
             theme(axis.title.y = element_text(size=16, face="bold", color="black", angle=90),
                   strip.background = element_rect(fill="white", size=0))
-        heatmap_group %<>% nest_top_facets(inner="strand")
+        if (str_detect(readtype, "subtracted")){
+            heatmap_sample = heatmap_sample +
+                facet_grid(replicate ~ group, scales="free_y", space="free_y")
+
+            heatmap_group = heatmap_group +
+                facet_grid(. ~ group)
+        } else {
+            heatmap_sample = heatmap_sample +
+                facet_grid(replicate ~ group + sampletype, scales="free_y", space="free_y")
+            heatmap_sample %<>% nest_top_facets(inner="strand")
+
+            heatmap_group = heatmap_group +
+                facet_grid(. ~ group + sampletype)
+                heatmap_group %<>% nest_top_facets(inner="strand")
+        }
 
     } else if (n_anno==1 && max(k)>1){
         heatmap_sample = heatmap_sample +
             ylab(annotations[1]) +
-            facet_grid(replicate + cluster ~ group + sampletype, scales="free_y", space="free_y") +
             theme(axis.title.y = element_text(size=16, face="bold", color="black", angle=90),
                   strip.text.y = element_text(size=12, face="bold", color="black"),
                   strip.background = element_rect(fill="white", size=0))
-        heatmap_sample %<>%
-            nest_right_facets(level=2, outer="replicate", inner="cluster") %>%
-            nest_top_facets(inner="strand", intype="gtable")
 
         heatmap_group = heatmap_group +
             ylab(annotations[1]) +
-            facet_grid(cluster ~ group + sampletype, scales="free_y", space="free_y") +
             theme(axis.title.y = element_text(size=16, face="bold", color="black", angle=90),
                   strip.background = element_rect(fill="white", size=0))
-        heatmap_group %<>%
-            nest_top_facets(inner="strand")
 
+        if (str_detect(readtype, "subtracted")){
+            heatmap_sample = heatmap_sample +
+                facet_grid(replicate + cluster ~ group, scales="free_y", space="free_y")
+            heatmap_sample %<>%
+                nest_right_facets(level=2, outer="replicate", inner="cluster")
+
+            heatmap_group = heatmap_group +
+                facet_grid(cluster ~ group, scales="free_y", space="free_y")
+        } else {
+            heatmap_sample = heatmap_sample +
+                facet_grid(replicate + cluster ~ group + sampletype, scales="free_y", space="free_y")
+            heatmap_sample %<>%
+                nest_right_facets(level=2, outer="replicate", inner="cluster") %>%
+                nest_top_facets(inner="strand", intype="gtable")
+
+            heatmap_group = heatmap_group +
+                facet_grid(cluster ~ group + sampletype, scales="free_y", space="free_y")
+            heatmap_group %<>%
+                nest_top_facets(inner="strand")
+        }
     } else if (n_anno>1 && max(k)==1){
         heatmap_sample = heatmap_sample +
-            facet_grid(replicate + annotation ~ group + sampletype, scales="free_y", space="free_y") +
             theme(strip.text.y = element_text(size=12, face="bold", color="black"),
                   strip.background = element_rect(fill="white", size=0))
-        heatmap_sample %<>%
-            nest_right_facets(level=2, outer="replicate") %>%
-            nest_top_facets(inner="strand", intype="gtable")
 
         heatmap_group = heatmap_group +
-            facet_grid(annotation ~ group + sampletype, scales="free_y", space="free_y") +
             theme(strip.background = element_rect(fill="white", size=0))
-        heatmap_group %<>%
-            nest_top_facets(inner="strand")
+
+        if (str_detect(readtype, "subtracted")){
+            heatmap_sample = heatmap_sample +
+                facet_grid(replicate + n ~ group, scales="free_y", space="free_y")
+            heatmap_sample %<>%
+                nest_right_facets(level=2, outer="replicate")
+
+            heatmap_group = heatmap_group +
+                facet_grid(annotation ~ group, scales="free_y", space="free_y")
+
+        } else {
+            heatmap_sample = heatmap_sample +
+                facet_grid(replicate + n ~ group + sampletype, scales="free_y", space="free_y")
+            heatmap_sample %<>%
+                nest_right_facets(level=2, outer="replicate") %>%
+                nest_top_facets(inner="strand", intype="gtable")
+
+            heatmap_group = heatmap_group +
+                facet_grid(annotation ~ group + sampletype, scales="free_y", space="free_y")
+            heatmap_group %<>%
+                nest_top_facets(inner="strand")
+        }
 
     } else if (n_anno>1 && max(k)>1){
         heatmap_sample = heatmap_sample +
-            facet_grid(replicate + annotation + cluster ~ group + sampletype,
-                       scales="free_y", space="free_y") +
             theme(strip.text.y = element_text(size=12, face="bold", color="black"),
                   strip.background = element_rect(fill="white", size=0))
-        heatmap_sample %<>%
-            nest_right_facets(level=3) %>%
-            nest_top_facets(inner="strand", intype="gtable")
 
         heatmap_group = heatmap_group +
-            facet_grid(annotation + cluster ~ group + strand, scales="free_y", space="free_y") +
             theme(strip.text.y = element_text(size=16, face="bold", color="black"),
                   strip.background = element_rect(fill="white", size=0))
-        heatmap_group %<>%
-            nest_right_facets(level=2, outer="annotation") %>%
-            nest_top_facets(inner="strand", intype="gtable")
+
+        if (str_detect(readtype, "subtracted")){
+            heatmap_sample = heatmap_sample +
+                facet_grid(replicate + annotation + cluster ~ group,
+                           scales="free_y", space="free_y")
+            heatmap_sample %<>%
+                nest_right_facets(level=3)
+
+            heatmap_group = heatmap_group +
+                facet_grid(annotation + cluster ~ group + strand, scales="free_y", space="free_y")
+            heatmap_group %<>%
+                nest_right_facets(level=2, outer="annotation")
+        } else {
+            heatmap_sample = heatmap_sample +
+                facet_grid(replicate + annotation + cluster ~ group + sampletype,
+                           scales="free_y", space="free_y")
+            heatmap_sample %<>%
+                nest_right_facets(level=3) %>%
+                nest_top_facets(inner="strand", intype="gtable")
+
+            heatmap_group = heatmap_group +
+                facet_grid(annotation + cluster ~ group, scales="free_y", space="free_y")
+            heatmap_group %<>%
+                nest_right_facets(level=2, outer="annotation") %>%
+                nest_top_facets(inner="strand", intype="gtable")
+        }
     }
     ggsave(heatmap_sample_out, plot=heatmap_sample, width=2+18*n_groups, height=10+10*max_reps, units="cm", limitsize=FALSE)
     ggsave(heatmap_group_out, plot=heatmap_group, width=2+18*n_groups, height=30, units="cm", limitsize=FALSE)
@@ -595,14 +662,14 @@ main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnst
         arrange(cluster) %>%
         mutate(cluster = fct_inorder(paste("cluster", cluster), ordered=TRUE))
 
-    meta_sample = meta(metadf_sample)
-    meta_group = meta(metadf_group, groupvar="group")
-    meta_sampleclust = meta(metadf_sample, groupvar="sampleclust")
-    meta_groupclust = meta(metadf_group, groupvar="groupclust")
+    meta_sample = meta(metadf_sample, strand=readtype)
+    meta_group = meta(metadf_group, groupvar="group", strand=readtype)
+    meta_sampleclust = meta(metadf_sample, groupvar="sampleclust", strand=readtype)
+    meta_groupclust = meta(metadf_group, groupvar="groupclust", strand=readtype)
 
     if(max(k) > 1 | n_anno > 1){
-        meta_sampleanno = meta(metadf_sample, groupvar="sampleanno")
-        meta_groupanno = meta(metadf_group, groupvar="groupanno")
+        meta_sampleanno = meta(metadf_sample, groupvar="sampleanno", strand=readtype)
+        meta_groupanno = meta(metadf_group, groupvar="groupanno", strand=readtype)
     }
 
     if (n_anno==1 && max(k)==1){
@@ -715,7 +782,7 @@ main(in_path = snakemake@input[["matrix"]],
      samplelist = snakemake@params[["samplelist"]],
      anno_paths = snakemake@input[["annotations"]],
      ptype = snakemake@params[["plottype"]],
-     readtype = snakemake@wildcards[["readtype"]],
+     readtype = snakemake@params[["readtype"]],
      upstream = snakemake@params[["upstream"]],
      dnstream = snakemake@params[["dnstream"]],
      scaled_length = snakemake@params[["scaled_length"]],
