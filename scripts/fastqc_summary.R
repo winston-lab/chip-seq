@@ -97,7 +97,7 @@ main = function(seq_len_dist_in, per_tile_in, per_base_qual_in,
               panel.grid.major.y = element_blank(),
               strip.text.x = element_blank())
 
-    ggsave(per_tile_out, plot=tile_quality_plot, width=14, height=2+2*nsamples, units="cm")
+    ggsave(per_tile_out, plot=tile_quality_plot, width=24, height=2+2*nsamples, units="cm")
 
     per_base_qual_plot = ggplot(data=per_base_qual, aes(x=base, y=fct_rev(sample),
                                                height=n, fill=mean, color=mean)) +
@@ -134,7 +134,7 @@ main = function(seq_len_dist_in, per_tile_in, per_base_qual_in,
         theme(legend.position="top",
               legend.margin = margin(0,0,0,0))
 
-    ggsave(adapter_content_out, plot=adapter_plot, width=26, height=2+1.25*nsamples, units="cm")
+    ggsave(adapter_content_out, plot=adapter_plot, width=32, height=2+1.25*nsamples, units="cm")
 
     per_base_seq_plot = ggplot(data = per_base_seq, aes(x=position, y=pct, color=base)) +
         geom_line() +
@@ -152,7 +152,7 @@ main = function(seq_len_dist_in, per_tile_in, per_base_qual_in,
               legend.text = element_text(size=12, face="bold"),
               axis.text.y = element_text(size=10, face="plain"))
 
-    ggsave(per_base_seq_out, plot=per_base_seq_plot, width=26, height=2+2.25*nsamples, units="cm")
+    ggsave(per_base_seq_out, plot=per_base_seq_plot, width=32, height=2+2.25*nsamples, units="cm")
 
     per_seq_gc_plot = ggplot(data = per_seq_gc, aes(x=gc_content, y=norm_count)) +
         geom_line(color="#114477") +

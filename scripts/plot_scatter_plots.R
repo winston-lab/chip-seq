@@ -43,7 +43,7 @@ main = function(intable, factor, binsize, pcount, samplelist, outpath){
                         scale_y_continuous(breaks=c(0,.5,1)) +
                         scale_x_log10(limit = c(pcount, maxsignal)) +
                         annotate("text", x=.90*maxsignal, y=0.5, hjust=1,
-                                 label=unique(subdf$sample), size=4, fontface="bold")
+                                 label=unique(subdf$sample), size=2, fontface="bold")
                 plots[[idx]] = plot
             } else {
                 #bottom left (scatter)
@@ -72,13 +72,14 @@ main = function(intable, factor, binsize, pcount, samplelist, outpath){
                           axis.text = element_text(size=9),
                           strip.background = element_blank(),
                           strip.text = element_text(size=12, color="black", face="bold"),
+                          strip.text.x = element_text(angle=15, hjust=1, vjust=1, size=8),
                           strip.text.y = element_text(angle=180, hjust=1),
                           strip.placement="outside",
                           strip.switch.pad.grid = unit(0, "points"),
                           strip.switch.pad.wrap = unit(0, "points"))
-    w = 3+ncol(df)*4
+    w = 3+ncol(df)*4.5
     h = 9/16*w+0.5
-    ggsave(outpath, mat, width=w, height=h, units="cm")
+    ggsave(outpath, mat, width=w, height=h, units="cm", limitsize=FALSE)
     print(warnings())
 }
 

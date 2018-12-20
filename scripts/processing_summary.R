@@ -54,8 +54,8 @@ main = function(in_table, surv_abs_out, surv_rel_out, loss_out){
                              scalefactor = .01, ylabel = "% of raw reads") +
         ggtitle("read processing summary", subtitle = "relative to library size")
 
-    ggsave(surv_abs_out, plot=surv_abs, width=14, height=2+2.5*nsamples, units="cm")
-    ggsave(surv_rel_out, plot=surv_rel, width=14, height=2+2.5*nsamples, units="cm")
+    ggsave(surv_abs_out, plot=surv_abs, width=20, height=2+2.5*nsamples, units="cm")
+    ggsave(surv_rel_out, plot=surv_rel, width=20, height=2+2.5*nsamples, units="cm")
 
     loss_plot = ggplot(data = loss, aes(x=step, y=0, fill=loss)) +
         geom_raster() +
@@ -79,7 +79,7 @@ main = function(in_table, surv_abs_out, surv_rel_out, loss_out){
               plot.subtitle = element_text(size=12, face="plain"),
               panel.border = element_blank())
 
-    ggsave(loss_out, plot=loss_plot, width=14, height=2+1.5*nsamples, units="cm")
+    ggsave(loss_out, plot=loss_plot, width=20, height=2+1.5*nsamples, units="cm")
 }
 
 main(in_table = snakemake@input[[1]],
