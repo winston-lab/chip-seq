@@ -69,12 +69,12 @@ callpeaks_macs2:
     mem: 1000
 
 map_to_windows:
-    time: 7
-    mem: 4000
+    time: 10
+    mem: 100
 
 join_window_counts:
-    time: 5
-    mem: 4000
+    time: 2
+    mem: 2
 
 plot_scatter_plots:
     time: 20
