@@ -43,9 +43,9 @@ rule fastqc_pre_and_unaligned:
                     (rm qual_ctrl/fastqc/raw/allunmatched.fastq.gz) &>> {log}""")
         else:
             adapter = SAMPLES[wildcards.sample]["barcode"]+"T"
-            shell("""(mkdir -p qual_ctrl/fastqc/raw) &> {log};
-                    (fastqc --adapters <(echo -e "adapter\t{adapter}") --nogroup --noextract -t {threads} -o qual_ctrl/fastqc/raw {input.fastq}) &>> {log};
-                    (unzip -p qual_ctrl/fastqc/raw/{params.fname}_fastqc.zip {params.fname}_fastqc/fastqc_data.txt > {output}) &>> {log}""")
+            shell("""(mkdir -p qual_ctrl/fastqc/{wildcards.read_status}) &> {log};
+                    (fastqc --adapters <(echo -e "adapter\t{adapter}") --nogroup --noextract -t {threads} -o qual_ctrl/fastqc/{wildcards.read_status} {input.fastq}) &>> {log};
+                    (unzip -p qual_ctrl/fastqc/{wildcards.read_status}/{params.fname}_fastqc.zip {params.fname}_fastqc/fastqc_data.txt > {output}) &>> {log}""")
 
 rule fastqc_aligned:
     input:
