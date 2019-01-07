@@ -7,10 +7,10 @@ An analysis pipeline for single-end ChIP-seq data with the following major steps
 
 - 3' adapter and quality trimming with [cutadapt](http://cutadapt.readthedocs.io/en/stable/guide.html)
 - alignment with [bowtie2](http://bowtie-bio.sourceforge.net/index.shtml)
-- summaries of quality statistics from [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) 
+- summaries of quality statistics from [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 - summaries of library processing statistics
 - fragment size estimation and peakcalling with [MACS2](https://github.com/taoliu/MACS)
-- generation of coverage tracks representing crosslinking points, fragment midpoints, and estimated fragment protection
+- generation of coverage tracks representing raw data, fragment midpoints, and estimated fragment protection
 - library size and spike-in normalization of coverage
 - genome-wide scatterplots and correlations
 - data visualization (heatmaps and metagenes, with the option to separate data into clusters of similar signal)
@@ -26,12 +26,12 @@ An analysis pipeline for single-end ChIP-seq data with the following major steps
 
 ### required files
 
-- Unpaired FASTQ files of ChIP-seq libraries. FASTQ files should be demultiplexed, with 5' inline barcodes trimmed. A separate pipeline for demultiplexing unpaired FASTQ files with 5' inline barcodes can be found [here](https://github.com/winston-lab/demultiplex-single-end). This pipeline has only been tested using Illumina sequencing data. 
+- Unpaired FASTQ files of ChIP-seq libraries. FASTQ files should be demultiplexed, with 5' inline barcodes trimmed. A separate pipeline for demultiplexing unpaired FASTQ files with 5' inline barcodes can be found [here](https://github.com/winston-lab/demultiplex-single-end). This pipeline has only been tested using Illumina sequencing data.
 
 - FASTA files:
     - the 'experimental' genome
-    - if any samples have spikeins:
-        - the spikein genome
+    - if any samples have spike-ins:
+        - the spike-in genome
 
 - [BED6](https://genome.ucsc.edu/FAQ/FAQformat.html#format1) format annotation files:
     - optional: annotations for data visualization (i.e. heatmaps and metagenes)
@@ -40,7 +40,7 @@ An analysis pipeline for single-end ChIP-seq data with the following major steps
 
 **0**. If you need to demultiplex and trim your FASTQ files, use the separate ['demultiplex-single-end' pipeline](https://github.com/winston-lab/demultiplex-single-end) to do so.
 
-**1**. If you haven't already done so, clone the separate ['build-annotations' pipeline](https://github.com/winston-lab/build-annotations), make a copy of the `config_template.yaml` file called `config.yaml`, and edit `config.yaml` as needed so that it points to the experimental genome FASTA file and spike-in FASTA file, if spike-ins were used. 
+**1**. If you haven't already done so, clone the separate ['build-annotations' pipeline](https://github.com/winston-lab/build-annotations), make a copy of the `config_template.yaml` file called `config.yaml`, and edit `config.yaml` as needed so that it points to the experimental genome FASTA file.
 
 ```bash
 
