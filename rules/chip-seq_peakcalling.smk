@@ -42,6 +42,6 @@ rule combine_peaks:
     log:
         "logs/combine_peaks/combine_peaks-{condition}-v-{control}-{type}-{factor}.log"
     shell: """
-        (bedtools multiinter -i {input} | bedtools merge -i stdin | sort -k1,1 -k2,2n | awk 'BEGIN{{FS=OFS="\t"}}{{print $1, $2, $3, 0, "."}}' > {output}) &> {log}
+        (bedtools multiinter -i {input} | bedtools merge -i stdin | sort -k1,1 -k2,2n | awk 'BEGIN{{FS=OFS="\t"}}{{print $1, $2, $3, ".", 0, "."}}' > {output}) &> {log}
         """
 

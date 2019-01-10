@@ -50,7 +50,7 @@ wildcard_constraints:
     species = "experimental|spikein",
     read_status = "raw|cleaned|aligned|unaligned",
     figure = "|".join(re.escape(x) for x in list(FIGURES.keys())),
-    annotation = "|".join(re.escape(x) for x in set(itertools.chain(*[FIGURES[figure]["annotations"].keys() for figure in FIGURES]))),
+    # annotation = "|".join(re.escape(x) for x in set(itertools.chain(*[FIGURES[figure]["annotations"].keys() for figure in FIGURES]))),
     status = "all|passing",
     counttype= "counts|sicounts",
     norm = "counts|sicounts|libsizenorm|spikenorm",
@@ -84,7 +84,7 @@ include: "rules/chip-seq_peakcalling.smk"
 include: "rules/chip-seq_genome_coverage.smk"
 include: "rules/chip-seq_sample_similarity.smk"
 include: "rules/chip-seq_datavis.smk"
-# include: "rules/mnase-seq_differential_occupancy.smk"
+include: "rules/chip-seq_differential_binding.smk"
 
 onsuccess:
     shell("(./mogrify.sh) > mogrify.log")
