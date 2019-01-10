@@ -81,10 +81,10 @@ plot_scatter_plots:
     mem: 10000
 
 compute_matrix:
-    time: 10
-    mem: 2000
+    time: 4
+    mem: 200
 
 plot_figures:
-    time: 40
-    mem: 20000
+    time: 20
+    mem: 12000
 
