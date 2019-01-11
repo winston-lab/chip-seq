@@ -2,7 +2,7 @@
 
 localrules:
     map_counts_to_annotations,
-    combine_transcript_counts
+    combine_annotation_counts
 
 rule map_counts_to_annotations:
     input:
@@ -33,48 +33,33 @@ rule combine_annotation_counts:
          cat <(echo -e "chrom\tstart\tend\tname\tscore\tstrand\t{params.names}" ) - > {output}) &> {log}
         """
 
-rule differential_expression:
+rule differential_binding:
     input:
-        expcounts = "diff_exp/{condition}-v-{control}/{condition}-v-{control}_{assay}-experimental-transcript-counts.tsv",
-        sicounts = lambda wc: [] if wc.norm=="libsizenorm" else  "diff_exp/{condition}-v-{control}/{condition}-v-{control}_{assay}-spikein-transcript-counts.tsv".format(**wc)
+        exp_counts = "diff_binding/{annotation}/{condition}-v-{control}/{condition}-v-{control}_allsamples-experimental-{factor}-chipseq-counts-{annotation}.tsv.gz",
+        spike_counts = lambda wc: [] if wc.norm=="libsizenorm" else "diff_binding/peaks/{condition}-v-{control}/{condition}-v-{control}_allsamples-spikein-{factor}-chipseq-counts-peaks.tsv.gz"
     output:
-        results_all = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-results-all.tsv",
-        results_up = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-results-up.tsv",
-        results_down = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-results-down.tsv",
-        results_unch = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-results-unchanged.tsv",
-        bed_all = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-results-all.bed",
-        bed_up = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-results-up.bed",
-        bed_down = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-results-down.bed",
-        bed_unch = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-results-unchanged.bed",
-        normcounts = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-counts-sizefactornorm.tsv",
-        rldcounts = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-counts-rlogtransformed.tsv",
-        qcplots = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-qc-plots.svg"
+        counts_norm_chip = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-ChIP-counts-sizefactornorm.tsv",
+        counts_norm_input = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-input-counts-sizefactornorm.tsv",
+        counts_rlog_chip = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-ChIP-counts-rlogtransform.tsv",
+        counts_rlog_input = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-input-counts-rlogtransform.tsv",
+        results_all = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-all.tsv",
+        results_up = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-up.tsv",
+        results_down = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-down.tsv",
+        results_unchanged = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-unchanged.tsv",
+        bed_all = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-all.bed",
+        bed_up = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-up.bed",
+        bed_down = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-down.bed",
+        bed_unchanged = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-unchanged.bed",
+        qc_plots = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-qcplots.svg",
     params:
-        samples = lambda wc : get_samples("passing", wc.norm, [wc.control, wc.condition]),
-        groups = lambda wc : [PASSING[x]["group"] for x in get_samples("passing", wc.norm, [wc.control, wc.condition])],
+        chip_samples = lambda wc: [x for x in get_samples("passing", wc.norm, [wc.control, wc.condition]) if x in CHIPS],
+        input_samples = lambda wc: [x for x in get_samples("passing", wc.norm, [wc.control, wc.condition]) if x in INPUTS],
+        chip_groups = lambda wc: [CHIPS[x]["group"] for x in get_samples("passing", wc.norm, [wc.control, wc.condition]) if x in CHIPS],
+        input_groups = lambda wc: [INPUTS[x]["group"] for x in get_samples("passing", wc.norm, [wc.control, wc.condition]) if x in INPUTS],
         alpha = config["differential_occupancy"]["fdr"],
         lfc = log2(config["differential_occupancy"]["fold-change-threshold"])
-    conda: "../envs/diff_exp.yaml"
+    conda:
+        "../envs/diff_exp.yaml"
     script:
-        "../scripts/call_diffexp_transcripts.R"
-
-rule summarise_diffexp_results:
-    input:
-        total = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-results-all.tsv",
-        genic = "diff_exp/{condition}-v-{control}/{norm}/genic/{condition}-v-{control}_{assay}-{norm}-diffexp-results-genic-all.tsv",
-        antisense = "diff_exp/{condition}-v-{control}/{norm}/antisense/{condition}-v-{control}_{assay}-{norm}-diffexp-results-antisense-all.tsv",
-        convergent = "diff_exp/{condition}-v-{control}/{norm}/convergent/{condition}-v-{control}_{assay}-{norm}-diffexp-results-convergent-all.tsv",
-        divergent = "diff_exp/{condition}-v-{control}/{norm}/divergent/{condition}-v-{control}_{assay}-{norm}-diffexp-results-divergent-all.tsv",
-        intergenic = "diff_exp/{condition}-v-{control}/{norm}/intergenic/{condition}-v-{control}_{assay}-{norm}-diffexp-results-intergenic-all.tsv",
-    output:
-        summary_table = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-summary.tsv",
-        mosaic = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-mosaic.svg",
-        maplot = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-maplot.svg",
-        volcano = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-volcano.svg",
-        volcano_free = "diff_exp/{condition}-v-{control}/{norm}/{condition}-v-{control}_{assay}-{norm}-diffexp-volcano-freescale.svg",
-    params:
-        lfc = config["differential_occupancy"]["fold-change-threshold"],
-        alpha = config["differential_occupancy"]["fdr"]
-    conda: "../envs/tidyverse.yaml"
-    script: "../scripts/plot_diffexp_summary.R"
+        "../scripts/differential_binding.R"
 

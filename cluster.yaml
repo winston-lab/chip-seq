@@ -80,6 +80,10 @@ plot_scatter_plots:
     time: 20
     mem: 10000
 
+differential_binding:
+    time: 3
+    mem: 1000
+
 compute_matrix:
     time: 4
     mem: 200

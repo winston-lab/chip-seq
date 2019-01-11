@@ -28,7 +28,7 @@ SISAMPLES = {**INPUTS_SISAMPLES, **CHIPS_SISAMPLES}
 SIPASSING = {**INPUTS_SIPASSING, **CHIPS_SIPASSING}
 GROUPS = set(v["group"] for (k,v) in CHIPS.items())
 
-#groups which have at least one passing chip and input sample, so that they are valid for peakcalling
+#groups which have at least one passing chip and input sample, so that they are valid for peakcalling and differential binding
 validgroups = set(v["group"] for k,v in CHIPS_PASSING.items() if v["input"] in INPUTS_PASSING)
 validgroups_si = set(v["group"] for k,v in CHIPS_SIPASSING.items() if v["input"] in INPUTS_SIPASSING)
 
@@ -117,4 +117,7 @@ rule all:
         #datavis
         expand(expand("datavis/{{figure}}/libsizenorm/{condition}-v-{control}/{{status}}/{{readtype}}/{{factor}}-chipseq_{{figure}}-libsizenorm-{{status}}_{condition}-v-{control}_{{readtype}}-heatmap-bysample.svg", zip, condition=conditioncheck(conditiongroups), control=conditioncheck(controlgroups)), figure=FIGURES, status=statuscheck(SAMPLES, PASSING), readtype=["midpoints", "midpoints-input-subtracted", "protection", "protection-input-subtracted"], factor=FACTOR),
         expand(expand("datavis/{{figure}}/spikenorm/{condition}-v-{control}/{{status}}/{{readtype}}/{{factor}}-chipseq_{{figure}}-spikenorm-{{status}}_{condition}-v-{control}_{{readtype}}-heatmap-bysample.svg", zip, condition=conditioncheck(conditiongroups_si), control=conditioncheck(controlgroups_si)), figure=FIGURES, status=statuscheck(SISAMPLES, SIPASSING), readtype=["midpoints", "midpoints-input-subtracted", "protection", "protection-input-subtracted"], factor=FACTOR),
+        #differential expression
+        expand(expand("diff_binding/{{annotation}}/{condition}-v-{control}/libsizenorm/{condition}-v-{control}_{{factor}}-chipseq-libsizenorm-{{annotation}}-diffbind-results-all.tsv", zip, condition=conditiongroups, control=controlgroups), annotation=list(config["differential_occupancy"]["annotations"].keys())+["peaks"], factor=FACTOR),
+        expand(expand("diff_binding/{{annotation}}/{condition}-v-{control}/spikenorm/{condition}-v-{control}_{{factor}}-chipseq-spikenorm-{{annotation}}-diffbind-results-all.tsv", zip, condition=conditiongroups_si, control=controlgroups_si), annotation=list(config["differential_occupancy"]["annotations"].keys())+["peaks"], factor=FACTOR)
 
