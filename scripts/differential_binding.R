@@ -29,30 +29,22 @@ initialize_dds = function(data_path,
         return()
 }
 
-extract_normalized_counts = function(dds, annotations, output_path){
+extract_normalized_counts = function(dds){
     dds %>%
         counts(normalized=TRUE) %>%
         as.data.frame() %>%
         rownames_to_column(var="index") %>%
         as_tibble() %>%
-        left_join(annotations, .,
-                  by="index") %>%
-        select(-index) %>%
-        write_tsv(output_path) %>%
         return()
 }
 
-extract_rlog_counts = function(dds, annotations, output_path){
+extract_rlog_counts = function(dds){
     dds %>%
         rlog(blind=FALSE) %>%
         assay() %>%
         as.data.frame() %>%
         rownames_to_column(var="index") %>%
         as_tibble() %>%
-        left_join(annotations, .,
-                  by="index") %>%
-        select(-index) %>%
-        write_tsv(output_path) %>%
         return()
 }
 
@@ -72,8 +64,6 @@ build_mean_sd_df_pre = function(dds){
 
 build_mean_sd_df_post = function(counts){
     counts %>%
-        select(-(1:6)) %>%
-        rowid_to_column(var="index") %>%
         gather(sample, signal, -index) %>%
         group_by(index) %>%
         summarise(mean = mean(signal),
@@ -111,8 +101,8 @@ get_mean_counts = function(counts_table,
                            groups,
                            condition_id){
     counts_table %>%
-        select(-c(1:6)) %>%
-        rownames_to_column(var = "index") %>%
+        # select(-c(1:6)) %>%
+        # rownames_to_column(var = "index") %>%
         gather(sample, value, -index) %>%
         mutate(group = if_else(sample %in% samples[groups==condition_id],
                                "condition_occupancy",
@@ -145,10 +135,24 @@ extract_deseq_results = function(dds,
                score = as.integer(pmin(-125*log2(padj), 1000))) %>%
         mutate_at(vars(pvalue, padj), funs(-log10(.))) %>%
         mutate_if(is.double, round, 3) %>%
-        select(chrom, start, end, name, score, strand,
+        select(index, chrom, start, end, name, score, strand,
                log2_foldchange=log2FoldChange, lfc_SE=lfcSE,
                stat, log10_pval=pvalue, log10_padj=padj, mean_occupancy=baseMean,
                condition_occupancy, control_occupancy) %>%
+        return()
+}
+
+write_counts_table = function(results_df,
+                              annotations,
+                              counts_df,
+                              output_path){
+    results_df %>%
+        select(1:7) %>%
+        right_join(annotations %>% select(-name),
+                   by = c("index", "chrom", "start", "end", "score", "strand")) %>%
+        left_join(counts_df, by="index") %>%
+        select(-index) %>%
+        write_tsv(output_path) %>%
         return()
 }
 
@@ -269,20 +273,19 @@ main = function(exp_table,
     dds_input %<>% estimateDispersions() %>% nbinomWaldTest()
 
     #extract normalized counts and write to file
-    counts_norm_chip = extract_normalized_counts(dds = dds_chip,
-                                                 annotations = annotations,
-                                                 output_path = counts_norm_chip_out)
-    counts_norm_input = extract_normalized_counts(dds = dds_input,
-                                                  annotations = annotations,
-                                                  output_path = counts_norm_input_out)
-    counts_rlog_chip = extract_rlog_counts(dds = dds_chip,
-                                           annotations = annotations,
-                                           output_path = counts_rlog_chip_out)
-    counts_rlog_input = extract_rlog_counts(dds = dds_input,
-                                           annotations = annotations,
-                                           output_path = counts_rlog_input_out)
+    counts_norm_chip = extract_normalized_counts(dds = dds_chip)
+                                                 # annotations = annotations,
+                                                 # output_path = counts_norm_chip_out)
+    counts_norm_input = extract_normalized_counts(dds = dds_input)
+                                                  # annotations = annotations,
+                                                  # output_path = counts_norm_input_out)
+    counts_rlog_chip = extract_rlog_counts(dds = dds_chip)
+                                           # annotations = annotations,
+                                           # output_path = counts_rlog_chip_out)
+    counts_rlog_input = extract_rlog_counts(dds = dds_input)
+                                           # annotations = annotations,
+                                           # output_path = counts_rlog_input_out)
 
-    #plot sd vs. mean for unshrunken (log2) counts
     mean_sd_df_pre_chip = build_mean_sd_df_pre(dds_chip)
     mean_sd_df_pre_input = build_mean_sd_df_pre(dds_input)
     mean_sd_df_post_chip = build_mean_sd_df_post(counts_rlog_chip)
@@ -321,18 +324,41 @@ main = function(exp_table,
                                             mean_counts_table = mean_counts_norm_chip,
                                             alpha = alpha,
                                             lfc = lfc)
+    # set annotation names in input to names assigned from the ChIP analysis
     results_df_input = extract_deseq_results(dds = dds_input,
                                              annotations = annotations,
                                              mean_counts_table = mean_counts_norm_input,
                                              alpha = alpha,
-                                             lfc = lfc)
+                                             lfc = lfc) %>%
+        select(-name) %>%
+        left_join(results_df_chip %>%
+                      select(index, name),
+                  by = "index") %>%
+        select(index, chrom, start, end, name, score, strand, everything())
+
+    write_counts_table(results_df = results_df_chip,
+                       annotations = annotations,
+                       counts_df = counts_norm_chip,
+                       output_path = counts_norm_chip_out)
+    write_counts_table(results_df = results_df_chip,
+                       annotations = annotations,
+                       counts_df = counts_rlog_chip,
+                       output_path = counts_rlog_chip_out)
+    write_counts_table(results_df = results_df_input,
+                       annotations = annotations,
+                       counts_df = counts_norm_input,
+                       output_path = counts_norm_input_out)
+    write_counts_table(results_df = results_df_input,
+                       annotations = annotations,
+                       counts_df = counts_rlog_input,
+                       output_path = counts_rlog_input_out)
 
     #blacklist differentially bound regions that are also differentially bound in the input
     results_df_filtered = results_df_chip %>%
         left_join(results_df_input,
-                  by = c("chrom", "start", "end", "strand"),
+                  by = c("index", "chrom", "start", "end", "name", "strand"),
                   suffix = c("", "_input")) %>%
-        select(-name_input) %>%
+        select(-index) %>%
         mutate_at(vars(c(5, 10, 11)),
                   funs(if_else((log10_padj > -log10(alpha) &
                                     log10_padj_input > -log10(alpha)) &
@@ -376,8 +402,6 @@ main = function(exp_table,
                           lfc = lfc,
                           condition = condition,
                           control = control)
-    write_tsv(results_df_filtered_significant, "sig.tsv")
-    write_tsv(results_df_filtered_nonsignificant, "nonsig.tsv")
     maplot_input = plot_ma(df_sig = results_df_filtered_significant,
                            df_nonsig = results_df_filtered_nonsignificant,
                            xvar = mean_occupancy_input,
