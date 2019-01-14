@@ -50,7 +50,7 @@ wildcard_constraints:
     species = "experimental|spikein",
     read_status = "raw|cleaned|aligned|unaligned",
     figure = "|".join(re.escape(x) for x in list(FIGURES.keys())),
-    # annotation = "|".join(re.escape(x) for x in set(itertools.chain(*[FIGURES[figure]["annotations"].keys() for figure in FIGURES]))),
+    annotation = "|".join(re.escape(x) for x in set(itertools.chain(*[FIGURES[figure]["annotations"].keys() for figure in FIGURES] + list(config["differential_occupancy"]["annotations"].keys())))),
     status = "all|passing",
     counttype= "counts|sicounts",
     norm = "counts|sicounts|libsizenorm|spikenorm",

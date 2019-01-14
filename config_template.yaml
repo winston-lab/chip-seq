@@ -108,7 +108,7 @@ macs2:
 smooth_bandwidth: 20  # [INT] bandwidth of Gaussian kernel used to smooth coverage
 
 # DESeq2 differential occupancy settings
-deseq:
+differential_occupancy:
     fdr: 0.1  # [FLOAT in (0,1)] false discovery rate threshold
     fold-change-threshold: 1  # [FLOAT] fold-change for hypothesis. Absolute fold-change, NOT log2(FC).
     annotations:  # paths to BED format annotation files of regions to test differential occupancy, in addition to called peaks
