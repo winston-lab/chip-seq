@@ -148,8 +148,8 @@ write_counts_table = function(results_df,
                               output_path){
     results_df %>%
         select(1:7) %>%
-        right_join(annotations %>% select(-name),
-                   by = c("index", "chrom", "start", "end", "score", "strand")) %>%
+        right_join(annotations %>% select(-c(name, score)),
+                   by = c("index", "chrom", "start", "end", "strand")) %>%
         left_join(counts_df, by="index") %>%
         select(-index) %>%
         write_tsv(output_path) %>%
