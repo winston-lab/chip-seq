@@ -89,6 +89,6 @@ compute_matrix:
     mem: 300
 
 plot_figures:
-    time: 20
+    time: 25
     mem: 18000
 
