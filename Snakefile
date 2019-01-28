@@ -50,7 +50,7 @@ wildcard_constraints:
     species = "experimental|spikein",
     read_status = "raw|cleaned|aligned|unaligned",
     figure = "|".join(re.escape(x) for x in list(FIGURES.keys())),
-    annotation = "|".join(re.escape(x) for x in set(list(itertools.chain(*[FIGURES[figure]["annotations"].keys() for figure in FIGURES])) + list(config["differential_occupancy"]["annotations"].keys()) + ["peaks"])),
+    annotation = "|".join(re.escape(x) for x in set(list(itertools.chain(*[FIGURES[figure]["annotations"].keys() for figure in FIGURES])) + list(config["differential_occupancy"]["annotations"].keys() if config["differential_occupancy"]["annotations"] else []) + ["peaks"])),
     status = "all|passing",
     counttype= "counts|sicounts",
     norm = "counts|sicounts|libsizenorm|spikenorm",
@@ -118,6 +118,6 @@ rule all:
         expand(expand("datavis/{{figure}}/libsizenorm/{condition}-v-{control}/{{status}}/{{readtype}}/{{factor}}-chipseq_{{figure}}-libsizenorm-{{status}}_{condition}-v-{control}_{{readtype}}-heatmap-bysample.svg", zip, condition=conditioncheck(conditiongroups), control=conditioncheck(controlgroups)), figure=FIGURES, status=statuscheck(SAMPLES, PASSING), readtype=["midpoints", "midpoints-input-subtracted", "protection", "protection-input-subtracted"], factor=FACTOR),
         expand(expand("datavis/{{figure}}/spikenorm/{condition}-v-{control}/{{status}}/{{readtype}}/{{factor}}-chipseq_{{figure}}-spikenorm-{{status}}_{condition}-v-{control}_{{readtype}}-heatmap-bysample.svg", zip, condition=conditioncheck(conditiongroups_si), control=conditioncheck(controlgroups_si)), figure=FIGURES, status=statuscheck(SISAMPLES, SIPASSING), readtype=["midpoints", "midpoints-input-subtracted", "protection", "protection-input-subtracted"], factor=FACTOR),
         #differential binding
-        expand(expand("diff_binding/{{annotation}}/{condition}-v-{control}/libsizenorm/{condition}-v-{control}_{{factor}}-chipseq-libsizenorm-{{annotation}}-diffbind-results-all.tsv", zip, condition=conditiongroups, control=controlgroups), annotation=list(config["differential_occupancy"]["annotations"].keys())+["peaks"], factor=FACTOR),
-        expand(expand("diff_binding/{{annotation}}/{condition}-v-{control}/spikenorm/{condition}-v-{control}_{{factor}}-chipseq-spikenorm-{{annotation}}-diffbind-results-all.tsv", zip, condition=conditiongroups_si, control=controlgroups_si), annotation=list(config["differential_occupancy"]["annotations"].keys())+["peaks"], factor=FACTOR)
+        expand(expand("diff_binding/{{annotation}}/{condition}-v-{control}/libsizenorm/{condition}-v-{control}_{{factor}}-chipseq-libsizenorm-{{annotation}}-diffbind-results-all.tsv", zip, condition=conditiongroups, control=controlgroups), annotation=list(config["differential_occupancy"]["annotations"].keys() if config["differential_occupancy"]["annotations"] else [])+["peaks"], factor=FACTOR),
+        expand(expand("diff_binding/{{annotation}}/{condition}-v-{control}/spikenorm/{condition}-v-{control}_{{factor}}-chipseq-spikenorm-{{annotation}}-diffbind-results-all.tsv", zip, condition=conditiongroups_si, control=controlgroups_si), annotation=list(config["differential_occupancy"]["annotations"].keys() if config["differential_occupancy"]["annotations"] else [])+["peaks"], factor=FACTOR)
 
