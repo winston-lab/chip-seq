@@ -20,7 +20,7 @@ fastqc_aligned:
 plot_fastqc_summary:
     time: 4
     n: 1
-    mem: 400
+    mem: 600
 
 clean_reads:
     time: 15
@@ -62,7 +62,7 @@ make_stranded_bedgraph:
 
 bedgraph_to_bigwig:
     time: 2
-    mem: 25
+    mem: 50
 
 callpeaks_macs2:
     time: 15
