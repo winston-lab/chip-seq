@@ -61,31 +61,39 @@ main = function(in_path, sample_list, controls, conditions, plot_out, stats_out)
                   sd_no_outlier = sd(abundance)) %>%
         write_tsv(path = stats_out, col_names=TRUE)
 
-    levels_df = tibble(condition=conditions, control=controls) %>%
-        left_join(stats_table %>% select(group, mean_no_outlier),
-                  by=c("condition"="group")) %>%
-        rename(condition_abundance=mean_no_outlier) %>%
-        left_join(stats_table %>% select(group, mean_no_outlier),
-                  by=c("control"="group")) %>%
-        rename(control_abundance=mean_no_outlier) %>%
-        mutate(levels = condition_abundance/control_abundance)
-
-    levels_table = levels_df %>%
-        select(condition, control, levels) %>%
-        mutate_at("levels", funs(round(., digits=3)))
-    levels_draw = tableGrob(levels_table,
-                            rows=NULL,
-                            cols=c("condition","control","relative levels"),
-                            ttheme_minimal(base_size=10))
     #set width
     wl = 1+1.6*n_samples
     wr = 1+1.8*n_groups
-    th = 1+length(conditions)/2
-    page = arrangeGrob(barplot, boxplot, levels_draw,
-                       layout_matrix=rbind(c(1,2),c(3,3)),
-                       widths=unit(c(wl, wr), "cm"),
-                       heights=unit(c(9,th),"cm"))
+    th = 0
+    if (!(is.null(conditions) || is.null(controls))){
+        levels_df = tibble(condition=conditions, control=controls) %>%
+            left_join(stats_table %>% select(group, mean_no_outlier),
+                      by=c("condition"="group")) %>%
+            rename(condition_abundance=mean_no_outlier) %>%
+            left_join(stats_table %>% select(group, mean_no_outlier),
+                      by=c("control"="group")) %>%
+            rename(control_abundance=mean_no_outlier) %>%
+            mutate(levels = condition_abundance/control_abundance)
 
+        levels_table = levels_df %>%
+            select(condition, control, levels) %>%
+            mutate_at("levels", funs(round(., digits=3)))
+        levels_draw = tableGrob(levels_table,
+                                rows=NULL,
+                                cols=c("condition","control","relative levels"),
+                                ttheme_minimal(base_size=10))
+
+        th = 1+length(conditions)/2
+        page = arrangeGrob(barplot, boxplot, levels_draw,
+                           layout_matrix=rbind(c(1,2),c(3,3)),
+                           widths=unit(c(wl, wr), "cm"),
+                           heights=unit(c(9,th),"cm"))
+    } else {
+        page = arrangeGrob(barplot, boxplot,
+                           widths=unit(c(wl, wr), "cm"),
+                           heights=unit(c(9,th),"cm"))
+
+    }
     ggsave(plot_out, page, width = wl+wr, height=9+th+.5, units = "cm")
 }
 
