@@ -1,5 +1,4 @@
 library(tidyverse)
-library(forcats)
 library(gridExtra)
 library(ggthemes)
 
@@ -8,7 +7,7 @@ main = function(in_path, sample_list, controls, conditions, plot_out, stats_out)
         filter(sample %in% sample_list) %>%
         mutate(abundance = (experimental_counts_IP / spikein_counts_IP ) *
                                     (spikein_counts_input / experimental_counts_input)) %>%
-        mutate_at(vars(sample, group), funs(fct_inorder(., ordered=TRUE))) %>%
+        mutate_at(vars(sample, group), ~(fct_inorder(., ordered=TRUE))) %>%
         group_by(group) %>%
         mutate(outlier= ifelse(abundance >
                                    2.5*quantile(abundance, .75) -
@@ -47,12 +46,12 @@ main = function(in_path, sample_list, controls, conditions, plot_out, stats_out)
               axis.title.y = element_text(size=10, color="black"))
 
     stats_table = df %>%
-        add_count(group) %>%
+        add_count(group, name="n") %>%
         group_by(group) %>%
         mutate(median = median(abundance)) %>%
         ungroup() %>%
         filter(!outlier) %>%
-        add_count(group) %>%
+        add_count(group, name="nn") %>%
         group_by(group) %>%
         summarise(n = first(n),
                   median = first(median),
@@ -77,7 +76,7 @@ main = function(in_path, sample_list, controls, conditions, plot_out, stats_out)
 
         levels_table = levels_df %>%
             select(condition, control, levels) %>%
-            mutate_at("levels", funs(round(., digits=3)))
+            mutate_at("levels", ~(round(., digits=3)))
         levels_draw = tableGrob(levels_table,
                                 rows=NULL,
                                 cols=c("condition","control","relative levels"),

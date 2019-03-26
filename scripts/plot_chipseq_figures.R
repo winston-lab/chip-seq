@@ -1,6 +1,5 @@
 library(tidyverse)
 library(magrittr)
-library(forcats)
 library(viridis)
 library(psych)
 library(seriation)
@@ -327,7 +326,7 @@ main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnst
         ungroup() %>%
         mutate(annotation = annotation_labeled) %>%
         select(-annotation_labeled)%>%
-        mutate_at(vars(group, sample, annotation), funs(fct_inorder(., ordered=TRUE)))
+        mutate_at(vars(group, sample, annotation), ~(fct_inorder(., ordered=TRUE)))
 
     #get replicate info for sample facetting
     repl_df = df %>%

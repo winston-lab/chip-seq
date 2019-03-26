@@ -133,7 +133,7 @@ extract_deseq_results = function(dds,
                               paste0("peak_", row_number()),
                               name),
                score = as.integer(pmin(-125*log2(padj), 1000))) %>%
-        mutate_at(vars(pvalue, padj), funs(-log10(.))) %>%
+        mutate_at(vars(pvalue, padj), ~(-log10(.))) %>%
         mutate_if(is.double, round, 3) %>%
         select(index, chrom, start, end, name, score, strand,
                log2_foldchange=log2FoldChange, lfc_SE=lfcSE,
@@ -360,7 +360,7 @@ main = function(exp_table,
                   suffix = c("", "_input")) %>%
         select(-index) %>%
         mutate_at(vars(c(5, 10, 11)),
-                  funs(if_else((log10_padj > -log10(alpha) &
+                  ~(if_else((log10_padj > -log10(alpha) &
                                     log10_padj_input > -log10(alpha)) &
                                    (sign(log2_foldchange)==sign(log2_foldchange_input)),
                                      -1, as.numeric(.), missing=as.numeric(.)))) %>%
