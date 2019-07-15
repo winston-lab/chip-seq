@@ -12,12 +12,17 @@ rule aggregate_read_numbers:
         align = expand("logs/align/align_{sample}.log", sample=SAMPLES),
     output:
         f"qual_ctrl/read_processing/{FACTOR}-chipseq_read-processing-summary.tsv"
-    log: "logs/aggregate_read_numbers.log"
+    log:
+        "logs/aggregate_read_numbers.log"
     run:
         shell("""(echo -e "sample\traw\tcleaned\tmapped\tunique_map" > {output}) &> {log}""")
         for sample, adapter, align in zip(SAMPLES.keys(), input.adapter, input.align):
-            shell("""(grep -e "Total reads processed:" -e "Reads written" {adapter} | cut -d: -f2 | sed 's/,//g' | awk 'BEGIN{{ORS="\t"; print "{sample}"}}{{print $1}}' >> {output}) &>> {log}""")
-            shell("""(grep -e "aligned 0 times" -e "aligned exactly 1 time" {align} | awk 'BEGIN{{ORS="\t"}} {{print $1}} END{{ORS="\\n"; print ""}}' >> {output}) &>> {log}""")
+            shell("""(grep -e "Total reads processed:" -e "Reads written" {adapter} | \
+                      cut -d: -f2 | \
+                      sed 's/,//g' | \
+                      awk 'BEGIN{{ORS="\t"; print "{sample}"}}{{print $1}}' >> {output}) &>> {log}""")
+            shell("""(grep -e "aligned 0 times" -e "aligned exactly 1 time" {align} | \
+                      awk 'BEGIN{{ORS="\t"}} {{print $1}} END{{ORS="\\n"; print ""}}' >> {output}) &>> {log}""")
         shell("""(awk 'BEGIN{{FS=OFS="\t"}} NR==1; NR>1{{$4=$3-$4; print $0}}' {output} > qual_ctrl/.readnumbers.temp; mv qual_ctrl/.readnumbers.temp {output}) &>> {log}""")
 
 rule plot_read_processing:
@@ -27,8 +32,10 @@ rule plot_read_processing:
         surv_abs_out = "qual_ctrl/read_processing/{factor}-chipseq_read-processing-survival-absolute.svg",
         surv_rel_out = "qual_ctrl/read_processing/{factor}-chipseq_read-processing-survival-relative.svg",
         loss_out  = "qual_ctrl/read_processing/{factor}-chipseq_read-processing-loss.svg",
-    conda: "../envs/tidyverse.yaml"
-    script: "../scripts/processing_summary.R"
+    conda:
+        "../envs/tidyverse.yaml"
+    script:
+        "../scripts/processing_summary.R"
 
 rule build_spikein_counts_table:
     input:
@@ -40,7 +47,8 @@ rule build_spikein_counts_table:
         f"qual_ctrl/spikein/{FACTOR}-chipseq_spikein-counts.tsv"
     params:
         groups = [v["group"] for k,v in CHIPS_SISAMPLES.items()]
-    log: "logs/build_spikein_counts_table.log"
+    log:
+        "logs/build_spikein_counts_table.log"
     run:
         shell("""(echo -e "sample\tgroup\ttotal_counts_input\texperimental_counts_input\tspikein_counts_input\ttotal_counts_IP\texperimental_counts_IP\tspikein_counts_IP" > {output}) &> {log} """)
         for sample, group, input_exp, input_si ,ip_exp, ip_si in zip(CHIPS_SISAMPLES.keys(), params.groups,

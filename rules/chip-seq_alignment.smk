@@ -58,7 +58,9 @@ rule align:
     conda: "../envs/bowtie2.yaml"
     threads : config["threads"]
     shell: """
-        (bowtie2 -x {params.idx_path}/{basename} -U {input.fastq} --un-gz {output.unaligned_fastq} -p {threads} | samtools view -buh -q {params.minmapq} - | samtools sort -T .{wildcards.sample} -@ {threads} -o {output.bam} -) &> {output.log}
+        (bowtie2 -x {params.idx_path}/{basename} -U {input.fastq} --un-gz {output.unaligned_fastq} -p {threads} | \
+         samtools view -buh -q {params.minmapq} - | \
+         samtools sort -T .{wildcards.sample} -@ {threads} -o {output.bam} -) &> {output.log}
         """
 
 #indexing is required for separating species by samtools view
@@ -85,6 +87,11 @@ rule bam_separate_species:
     threads: config["threads"]
     log: "logs/bam_separate_species/bam_separate_species-{sample}-{species}.log"
     shell: """
-        (samtools view -h {input.bam} $(faidx {input.fasta} -i chromsizes | grep {params.prefix}_ | awk 'BEGIN{{FS="\t"; ORS=" "}}{{print $1}}') | grep -v -e 'SN:{params.filterprefix}_' | sed 's/{params.prefix}_//g' | samtools view -bh -@ {threads} -o {output} -) &> {log}
+        (samtools view -h {input.bam} $(faidx {input.fasta} -i chromsizes | \
+         grep {params.prefix}_ | \
+         awk 'BEGIN{{FS="\t"; ORS=" "}}{{print $1}}') | \
+         grep -v -e 'SN:{params.filterprefix}_' | \
+         sed 's/{params.prefix}_//g' | \
+         samtools view -bh -@ {threads} -o {output} -) &> {log}
         """
 

@@ -13,7 +13,8 @@ rule crosslink_coverage:
     log:
         "logs/crosslink_coverage/crosslink_coverage-{sample}-{counttype}-{strand}-{factor}.log"
     shell: """
-        (bedtools genomecov -bga -5 -strand {params.strand_symbol} -ibam {input} | LC_COLLATE=C sort -k1,1 -k2,2n > {output}) &> {log}
+        (bedtools genomecov -bga -5 -strand {params.strand_symbol} -ibam {input} | \
+         LC_COLLATE=C sort -k1,1 -k2,2n > {output}) &> {log}
         """
 
 #extend reads to the median fragment size over all samples as
@@ -29,8 +30,13 @@ rule protection_coverage:
     log:
         "logs/genome_coverage/genome_coverage-{sample}-{counttype}-protection-{factor}.log"
     shell: """
-        median_fragsize=$(grep -e "^# d = " {input.tsv} | cut -d ' ' -f4 | sort -k1,1n | awk '{{count[NR]=$1;}} END{{if (NR % 2) {{print count[(NR+1)/2]}} else {{print (count[(NR/2)] + count[(NR/2)+1]) / 2.0;}} }}' | xargs printf "%.*f\n" 0)
-        (bedtools genomecov -bga -fs $median_fragsize -scale $(echo 1/$median_fragsize | bc -l) -ibam {input.bam} | LC_COLLATE=C sort -k1,1 -k2,2n > {output}) &> {log}
+        median_fragsize=$(grep -e "^# d = " {input.tsv} | \
+                          cut -d ' ' -f4 | \
+                          sort -k1,1n | \
+                          awk '{{count[NR]=$1;}} END{{if (NR % 2) {{print count[(NR+1)/2]}} else {{print (count[(NR/2)] + count[(NR/2)+1]) / 2.0;}} }}' | \
+                          xargs printf "%.*f\n" 0)
+        (bedtools genomecov -bga -fs $median_fragsize -scale $(echo 1/$median_fragsize | bc -l) -ibam {input.bam} | \
+         LC_COLLATE=C sort -k1,1 -k2,2n > {output}) &> {log}
         """
 
 #shift 5' ends of reads by half the median fragment size
@@ -48,8 +54,13 @@ rule midpoint_coverage:
     log:
         "logs/genome_coverage/genome_coverage-{sample}-{counttype}-midpoints-{factor}.log"
     shell: """
-        half_median_fragsize=$(grep -e "^# d = " {input.tsv} | cut -d ' ' -f4 | sort -k1,1n | awk '{{count[NR]=$1;}} END{{if (NR % 2) {{print count[(NR+1)/2]/2.0}} else {{print (count[(NR/2)] + count[(NR/2)+1]) / 4.0;}} }}' | xargs printf "%.*f\n" 0)
-        (bedtools unionbedg -i <(bedtools shift -i {input.plus} -g <(faidx {input.fasta} -i chromsizes) -s $half_median_fragsize) <(bedtools shift -i {input.minus} -g <(faidx {input.fasta} -i chromsizes) -s -$half_median_fragsize) -g <(faidx {input.fasta} -i chromsizes) -empty | awk 'BEGIN{{FS=OFS="\t"}}{{print $1, $2, $3, $4+$5}}' > {output}) &> {log}
+        half_median_fragsize=$(grep -e "^# d = " {input.tsv} | \
+                               cut -d ' ' -f4 | \
+                               sort -k1,1n | \
+                               awk '{{count[NR]=$1;}} END{{if (NR % 2) {{print count[(NR+1)/2]/2.0}} else {{print (count[(NR/2)] + count[(NR/2)+1]) / 4.0;}} }}' | \
+                               xargs printf "%.*f\n" 0)
+        (bedtools unionbedg -i <(bedtools shift -i {input.plus} -g <(faidx {input.fasta} -i chromsizes) -s $half_median_fragsize) <(bedtools shift -i {input.minus} -g <(faidx {input.fasta} -i chromsizes) -s -$half_median_fragsize) -g <(faidx {input.fasta} -i chromsizes) -empty | \
+         awk 'BEGIN{{FS=OFS="\t"}}{{print $1, $2, $3, $4+$5}}' > {output}) &> {log}
         """
 
 rule normalize_genome_coverage:
@@ -69,7 +80,9 @@ rule normalize_genome_coverage:
     run:
         if wildcards.norm=="libsizenorm" or wildcards.sample in INPUTS:
             shell("""
-                  (awk -v norm_factor=$(samtools view -c {input.bam_experimental} | paste -d "" - <(echo "/1000000") | bc -l) 'BEGIN{{FS=OFS="\t"}}{{$4=$4/norm_factor; print $0}}' {input.counts} > {output.normalized}) &> {log}
+                  (awk -v norm_factor=$(samtools view -c {input.bam_experimental} | \
+                                        paste -d "" - <(echo "/1000000") | bc -l) \
+                        'BEGIN{{FS=OFS="\t"}}{{$4=$4/norm_factor; print $0}}' {input.counts} > {output.normalized}) &> {log}
                   """)
         else:
             shell("""
@@ -86,22 +99,11 @@ rule subtract_inputs:
         input_sample = lambda wc: f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bedgraph".format(sample=CHIPS[wc.sample]["input"]),
     output:
         "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{strand}-input-subtracted.bedgraph",
+    log:
+        "logs/subtract_inputs/subtract_inputs-{sample}-{norm}-{strand}-{factor}.log"
     shell: """
-        bedtools unionbedg -i {input.ip_sample} {input.input_sample} | awk 'BEGIN{{FS=OFS="\t"}}{{print $1, $2, $3, $4-$5}}' > {output}
+        (bedtools unionbedg -i {input.ip_sample} {input.input_sample} | awk 'BEGIN{{FS=OFS="\t"}}{{print $1, $2, $3, $4-$5}}' > {output}) &> {log}
         """
-
-# rule make_stranded_bedgraph:
-#     input:
-#         plus = lambda wc: "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-".format(**wc) + ("plus" if wc.strand=="SENSE" else "minus") + ".bedgraph",
-#         minus = lambda wc: "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-".format(**wc) + ("minus" if wc.strand=="SENSE" else "plus") + ".bedgraph",
-#     output:
-#         "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{strand}.bedgraph",
-#     wildcard_constraints:
-#         strand="SENSE|ANTISENSE"
-#     log : "logs/make_stranded_bedgraph/make_stranded_bedgraph-{sample}-{norm}-{strand}-{factor}.log"
-#     shell: """
-#         (bash scripts/makeStrandedBedgraph.sh {input.plus} {input.minus}> {output}) &> {log}
-#         """
 
 rule bedgraph_to_bigwig:
     input:
