@@ -1,0 +1,11 @@
+name: diffbind_to_narrowpeak
+channels:
+    - conda-forge
+    - bioconda
+dependencies:
+    - pandas=0.23.4
+    - numpy=1.15.4
+    - scipy=1.1.0
+    - pybigwig=0.3.12
+    - gawk=4.2.1
+

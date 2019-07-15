@@ -5,7 +5,7 @@ localrules: cat_matrices
 rule compute_matrix:
     input:
         annotation = lambda wc: FIGURES[wc.figure]["annotations"][wc.annotation]["path"],
-        bw = lambda wc: f"coverage/{wc.norm}/{wc.sample}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw" if wc.sampletype=="ChIP" else f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw".format(sample = CHIPS[wc.sample]["input"])
+        bw = lambda wc: f"coverage/{wc.norm}/{wc.sample}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw" if wc.sampletype=="ChIP" else f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw".format(sample = CHIPS[wc.sample]["control"])
     output:
         dtfile = temp("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}.mat.gz"),
         matrix = temp("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}.tsv"),
@@ -34,7 +34,16 @@ rule compute_matrix:
 
 rule cat_matrices:
     input:
-        lambda wc: expand("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}-melted.tsv.gz", annotation=list(FIGURES[wc.figure]["annotations"].keys()), sample=CHIPS if wc.norm=="libsizenorm" else CHIPS_SISAMPLES, sampletype=["ChIP"] + (["input"] if "-input-subtracted" not in wc.strand else []), figure=wc.figure, norm=wc.norm, strand=wc.strand)
+        lambda wc: expand("datavis/{{figure}}/{{norm}}/{annotation}_{sample}-{sampletype}-{{norm}}-{{strand}}-melted.tsv.gz",
+                          annotation=list(FIGURES[wc.figure]["annotations"].keys()),
+                          sample={"libsizenorm":
+                                    {True: get_samples(paired=True),
+                                     False: CHIPS},
+                                  "spikenorm":
+                                    {True: get_samples(spikein=True, paired=True),
+                                     False: get_samples(spikein=True)}
+                                  }.get(wc.norm).get("-input-subtracted" in wc.strand),
+                          sampletype="ChIP" if "-input-subtracted" in wc.strand else ["ChIP", "input"])
     output:
         "datavis/{figure}/{norm}/{figure}-allsamples-allannotations-{factor}-chipseq-{norm}-{strand}.tsv.gz"
     log:
@@ -61,7 +70,9 @@ rule plot_figures:
         # abusing snakemake a bit here...using params as output paths since in order to use lambda functions
         annotations_out = lambda wc: ["datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/".format(**wc) + annotation + "_cluster-" + str(cluster) + ".bed" for annotation in FIGURES[wc.figure]["annotations"] for cluster in range(1, FIGURES[wc.figure]["annotations"][annotation]["n_clusters"]+1)],
         clusters_out = lambda wc: ["datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/".format(**wc) + annotation + ".pdf" for annotation in FIGURES[wc.figure]["annotations"]],
-        samplelist = lambda wc: get_samples(wc.status, wc.norm, [wc.condition, wc.control]),
+        samplelist = lambda wc: list(get_samples(passing=(True if wc.status=="passing" else False),
+                                                 spikein=(True if wc.norm=="spikenorm" else False),
+                                                 groups=[wc.condition, wc.control]).keys()),
         plottype = lambda wc: FIGURES[wc.figure]["parameters"]["type"],
         readtype = lambda wc: wc.readtype.split("-")[0] + ", input subtracted" if "subtracted" in wc.readtype else wc.readtype,
         upstream = lambda wc: FIGURES[wc.figure]["parameters"]["upstream"],
@@ -76,7 +87,10 @@ rule plot_figures:
         cmap = lambda wc: FIGURES[wc.figure]["parameters"]["heatmap_colormap"],
         sortmethod = lambda wc: FIGURES[wc.figure]["parameters"]["arrange"],
         cluster_scale = lambda wc: "FALSE" if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else str(FIGURES[wc.figure]["parameters"]["cluster_scale"]).upper(),
-        cluster_samples = lambda wc: [] if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else get_samples(wc.status, wc.norm, FIGURES[wc.figure]["parameters"]["cluster_conditions"]),
+        cluster_samples = lambda wc: [] if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else \
+                list(get_samples(passing=(True if wc.status=="passing" else False),
+                                 spikein=(True if wc.norm=="spikenorm" else False),
+                                 groups=FIGURES[wc.figure]["parameters"]["cluster_conditions"]).keys()),
         cluster_five = lambda wc: [] if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else FIGURES[wc.figure]["parameters"]["cluster_five"],
         cluster_three = lambda wc: [] if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else FIGURES[wc.figure]["parameters"]["cluster_three"],
         k = lambda wc: [v["n_clusters"] for k,v in FIGURES[wc.figure]["annotations"].items()],

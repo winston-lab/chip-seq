@@ -39,19 +39,19 @@ rule plot_read_processing:
 
 rule build_spikein_counts_table:
     input:
-        ip_bam_experimental = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-experimental.bam", sample=CHIPS_SISAMPLES),
-        ip_bam_spikein = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-spikein.bam", sample=CHIPS_SISAMPLES),
-        input_bam_experimental = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-experimental.bam", sample=[v["input"] for k,v in CHIPS_SISAMPLES.items()]),
-        input_bam_spikein = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-spikein.bam", sample=[v["input"] for k,v in CHIPS_SISAMPLES.items()])
+        ip_bam_experimental = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-experimental.bam", sample=get_samples(spikein=True, paired=True)),
+        ip_bam_spikein = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-spikein.bam", sample=get_samples(spikein=True, paired=True)),
+        input_bam_experimental = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-experimental.bam", sample=[v["control"] for k,v in get_samples(spikein=True, paired=True).items()]),
+        input_bam_spikein = expand(f"alignment/{{sample}}_{FACTOR}-chipseq-uniquemappers-spikein.bam", sample=[v["control"] for k,v in get_samples(spikein=True, paired=True).items()])
     output:
         f"qual_ctrl/spikein/{FACTOR}-chipseq_spikein-counts.tsv"
     params:
-        groups = [v["group"] for k,v in CHIPS_SISAMPLES.items()]
+        groups = [v["group"] for k,v in get_samples(spikein=True, paired=True).items()]
     log:
         "logs/build_spikein_counts_table.log"
     run:
         shell("""(echo -e "sample\tgroup\ttotal_counts_input\texperimental_counts_input\tspikein_counts_input\ttotal_counts_IP\texperimental_counts_IP\tspikein_counts_IP" > {output}) &> {log} """)
-        for sample, group, input_exp, input_si ,ip_exp, ip_si in zip(CHIPS_SISAMPLES.keys(), params.groups,
+        for sample, group, input_exp, input_si ,ip_exp, ip_si in zip(get_samples(spikein=True, paired=True).keys(), params.groups,
                                                                      input.input_bam_experimental, input.input_bam_spikein,
                                                                      input.ip_bam_experimental, input.ip_bam_spikein):
             shell("""(paste <(echo -e "{sample}\t{group}\t") \
@@ -69,7 +69,7 @@ rule plot_spikein_pct:
         plot = f"qual_ctrl/spikein/{FACTOR}-chipseq_spikein-plots-{{status}}.svg",
         stats = f"qual_ctrl/spikein/{FACTOR}-chipseq_spikein-stats-{{status}}.tsv"
     params:
-        samplelist = lambda wc : list(CHIPS_SISAMPLES.keys()) if wc.status=="all" else list(CHIPS_SIPASSING.keys()),
+        samplelist = lambda wc: get_samples(passing=(True if wc.status=="passing" else False), spikein=True, paired=True).keys(),
         conditions = conditiongroups_si if comparisons_si else [],
         controls = controlgroups_si if comparisons_si else []
     conda:

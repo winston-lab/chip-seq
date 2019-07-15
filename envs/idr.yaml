@@ -1,0 +1,9 @@
+name: idr
+channels:
+    - conda-forge
+    - bioconda
+dependencies:
+    - gawk=4.2.1
+    - sed=4.4
+    - idr=2.0.4.2
+

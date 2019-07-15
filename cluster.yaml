@@ -62,11 +62,15 @@ make_stranded_bedgraph:
 
 bedgraph_to_bigwig:
     time: 2
-    mem: 50
+    mem: 150
 
 callpeaks_macs2:
     time: 15
     mem: 1000
+
+idr:
+    time: 5
+    mem: 400
 
 map_to_windows:
     time: 10
@@ -83,6 +87,10 @@ plot_scatter_plots:
 differential_binding:
     time: 3
     mem: 1000
+
+diffbind_results_to_narrowpeak:
+    time: 2
+    mem: 600
 
 compute_matrix:
     time: 4

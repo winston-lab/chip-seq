@@ -5,4 +5,5 @@ channels:
 dependencies:
     - macs2=2.1.2
     - sed=4.4
+    - pyfaidx=0.5.5.2
 
