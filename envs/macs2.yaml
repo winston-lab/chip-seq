@@ -1,7 +1,7 @@
 name: macs2
 channels:
-    - bioconda
     - conda-forge
+    - bioconda
 dependencies:
     - macs2=2.1.2
     - sed=4.4
