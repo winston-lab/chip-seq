@@ -50,28 +50,28 @@ chip_samples:
         fastq: ../demultiplex-spn1-chipseq-2/fastq/non-depleted-Spn1-IP-1.fastq.gz
         barcode: ACAGTG # [STRING] sample barcode
         group: non-depleted  # [STRING] sample group tag. Do not use underscores ("_").
-        input: non-depleted-untagged-input-3  # [STRING] name of the corresponding input samples. Must be present in the input_samples listed above.
+        control: non-depleted-untagged-input-3  # [STRING] name of the corresponding input samples. Must be present in the input_samples listed above.
         pass-qc: True  # [True|False] Should this sample be used for peakcalling, and included in "passing" heatmaps, metagenes, scatter plots, etc? Leave True for initial pipeline run, and rerun pipeline with False if a sample fails quality controls.
         spikein: True  # [True|True] Does the sample have a spikein?
     non-depleted-Spn1-IP-2:
         fastq: ../demultiplex-spn1-chipseq-2/fastq/non-depleted-Spn1-IP-2.fastq.gz
         barcode: CAGATC
         group: non-depleted
-        input: non-depleted-untagged-input-4
+        control: non-depleted-untagged-input-4
         pass-qc: True
         spikein: True
     depleted-Spn1-IP-1:
         fastq: ../demultiplex-spn1-chipseq-2/fastq/depleted-Spn1-IP-1.fastq.gz
         barcode: GCCAAT
         group: depleted
-        input: depleted-untagged-input-3
+        control: depleted-untagged-input-3
         pass-qc: True
         spikein: True
     depleted-Spn1-IP-2:
         fastq: ../demultiplex-spn1-chipseq-2/fastq/depleted-Spn1-IP-2.fastq.gz
         barcode: ACTTGA
         group: depleted
-        input: depleted-untagged-input-4
+        control: depleted-untagged-input-4
         pass-qc: True
         spikein: True
 
@@ -96,13 +96,13 @@ bowtie2:
 
     minmapq : 5
 
-macs2:
+peakcalling:
     bw: 250 # bandwidth for model building: set as sonication fragment size
     llocal: 2000  # large region for calculating local lambda
     slocal: 500  # small region for calculating local lambda
-    fdr: 0.05  # minimum cutoff to call significant regions
     mfold_low: 2  #
     mfold_high: 50
+    idr: 0.05  # IDR cutoff
 
 # for smoothed coverage tracks
 smooth_bandwidth: 20  # [INT] bandwidth of Gaussian kernel used to smooth coverage
