@@ -24,7 +24,7 @@ main = function(in_path, sample_list, controls, conditions, plot_out, stats_out)
         geom_col() +
         geom_text(aes(label=round(abundance, 2)), size=12/75*25.4,
                   position=position_stack(vjust=0.9)) +
-        scale_fill_ptol(guide=FALSE) +
+        scale_fill_manual(values=rep(ptol_pal()(min(n_groups, 12)), ceiling(n_groups/12))) +
         ylab("spike-in normalized\nabundance vs. input") +
         theme_light() +
         theme(axis.text = element_text(size=10, color="black"),
@@ -36,7 +36,7 @@ main = function(in_path, sample_list, controls, conditions, plot_out, stats_out)
     boxplot = ggplot(data = df, aes(x=group, y=abundance, fill=group)) +
         geom_boxplot(outlier.shape=16, outlier.size=1.5, outlier.color="red", outlier.stroke=0) +
         geom_point(shape=16, size=1, stroke=0) +
-        scale_fill_ptol(guide=FALSE) +
+        scale_fill_manual(values=rep(ptol_pal()(min(n_groups, 12)), ceiling(n_groups/12))) +
         scale_y_continuous(name = "spike-in normalized\nabundance vs. input",
                            limits = c(0, NA)) +
         theme_light() +
@@ -102,4 +102,3 @@ main(in_path = snakemake@input[[1]],
      conditions = snakemake@params[["conditions"]],
      plot_out = snakemake@output[["plot"]],
      stats_out = snakemake@output[["stats"]])
-
