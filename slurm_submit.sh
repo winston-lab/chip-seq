@@ -2,7 +2,7 @@
 
 #SBATCH -p short
 #SBATCH -t 12:00:00
-#SBATCH --mem-per-cpu=1400M
+#SBATCH --mem-per-cpu=3G
 #SBATCH -c 1
 #SBATCH -e snakemake.err
 #SBATCH -o snakemake.log
