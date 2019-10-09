@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-localrules: combine_peaks
+localrules:
+    combine_peaks
 
 rule callpeaks_macs2:
     input:
