@@ -2,7 +2,8 @@
 
 localrules:
     map_counts_to_annotations,
-    combine_annotation_counts
+    combine_annotation_counts,
+    diffbind_results_to_narrowpeak
 
 rule map_counts_to_annotations:
     input:

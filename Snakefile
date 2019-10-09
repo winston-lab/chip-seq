@@ -62,17 +62,17 @@ allgroups_si = [v["group"] for k,v in get_samples(passing=True, spikein=True, pa
 validgroups = set(z for z in allgroups if allgroups.count(z)>=2)
 validgroups_si = set(z for z in allgroups_si if allgroups_si.count(z)>=2)
 
-controlgroups_all = list(itertools.chain(*[d.values() for d in config["comparisons"]["libsizenorm"] if list(d.keys())[0] and list(d.values())[0] in allgroups]))
-conditiongroups_all = list(itertools.chain(*[d.keys() for d in config["comparisons"]["libsizenorm"] if list(d.keys())[0] and list(d.values())[0] in allgroups]))
-controlgroups = list(itertools.chain(*[d.values() for d in config["comparisons"]["libsizenorm"] if list(d.keys())[0] and list(d.values())[0] in validgroups]))
-conditiongroups = list(itertools.chain(*[d.keys() for d in config["comparisons"]["libsizenorm"] if list(d.keys())[0] and list(d.values())[0] in validgroups]))
+controlgroups_all = list(itertools.chain(*[d.values() for d in config["comparisons"]["libsizenorm"] if list(d.keys())[0] in allgroups and list(d.values())[0] in allgroups]))
+conditiongroups_all = list(itertools.chain(*[d.keys() for d in config["comparisons"]["libsizenorm"] if list(d.keys())[0] in allgroups and list(d.values())[0] in allgroups]))
+controlgroups = list(itertools.chain(*[d.values() for d in config["comparisons"]["libsizenorm"] if list(d.keys())[0] in validgroups and list(d.values())[0] in validgroups]))
+conditiongroups = list(itertools.chain(*[d.keys() for d in config["comparisons"]["libsizenorm"] if list(d.keys())[0] in validgroups and list(d.values())[0] in validgroups]))
 
 comparisons_si =  config["comparisons"]["spikenorm"]
 if comparisons_si:
-    controlgroups_si_all = list(itertools.chain(*[d.values() for d in config["comparisons"]["spikenorm"] if list(d.keys())[0] and list(d.values())[0] in allgroups_si]))
-    conditiongroups_si_all = list(itertools.chain(*[d.keys() for d in config["comparisons"]["spikenorm"] if list(d.keys())[0] and list(d.values())[0] in allgroups_si]))
-    controlgroups_si = list(itertools.chain(*[d.values() for d in config["comparisons"]["spikenorm"] if list(d.keys())[0] and list(d.values())[0] in validgroups_si]))
-    conditiongroups_si = list(itertools.chain(*[d.keys() for d in config["comparisons"]["spikenorm"] if list(d.keys())[0] and list(d.values())[0] in validgroups_si]))
+    controlgroups_si_all = list(itertools.chain(*[d.values() for d in config["comparisons"]["spikenorm"] if list(d.keys())[0] in allgroups_si and list(d.values())[0] in allgroups_si]))
+    conditiongroups_si_all = list(itertools.chain(*[d.keys() for d in config["comparisons"]["spikenorm"] if list(d.keys())[0] in allgroups_si and list(d.values())[0] in allgroups_si]))
+    controlgroups_si = list(itertools.chain(*[d.values() for d in config["comparisons"]["spikenorm"] if list(d.keys())[0] in validgroups_si and list(d.values())[0] in validgroups_si]))
+    conditiongroups_si = list(itertools.chain(*[d.keys() for d in config["comparisons"]["spikenorm"] if list(d.keys())[0] in validgroups_si and list(d.values())[0] in validgroups_si]))
 
 wildcard_constraints:
     sample = "|".join(re.escape(x) for x in list(SAMPLES.keys()) + ["unmatched"]),

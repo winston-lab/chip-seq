@@ -20,7 +20,7 @@ fastqc_aligned:
 plot_fastqc_summary:
     time: 4
     n: 1
-    mem: 1200
+    mem: 2G
 
 clean_reads:
     time: 15

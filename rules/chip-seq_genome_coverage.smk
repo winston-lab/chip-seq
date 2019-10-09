@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+localrules:
+    normalize_genome_coverage,
+    subtract_inputs,
+    bedgraph_to_bigwig,
+    smoothed_midpoint_coverage
+
 rule crosslink_coverage:
     input:
         lambda wc: "alignment/{sample}_{factor}-chipseq-uniquemappers-".format(**wc) + ("experimental" if wc.counttype=="counts" else "spikein") + ".bam",

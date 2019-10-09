@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+localrules:
+    map_to_windows, join_window_counts
+
 rule map_to_windows:
     input:
         bg = f"coverage/{{norm}}/{{sample}}_{FACTOR}-chipseq-{{norm}}-midpoints.bedgraph",
