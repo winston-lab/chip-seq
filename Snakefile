@@ -47,9 +47,10 @@ def statuscheck(dict1, dict2):
         return ["passing", "all"]
 
 def conditioncheck(conditionlist):
-    if len(conditionlist) == 0:
+    n_conditions = len(conditionlist)
+    if n_conditions == 0:
         return []
-    elif len(conditionlist) == 1:
+    elif n_conditions == 1 or n_conditions > 10:
         return conditionlist
     else:
         return conditionlist + ["all"]
@@ -62,23 +63,25 @@ allgroups_si = [v["group"] for k,v in get_samples(passing=True, spikein=True, pa
 validgroups = set(z for z in allgroups if allgroups.count(z)>=2)
 validgroups_si = set(z for z in allgroups_si if allgroups_si.count(z)>=2)
 
-controlgroups_all = list(itertools.chain(*[d.values() for d in config["comparisons"]["libsizenorm"] if list(d.keys())[0] in allgroups and list(d.values())[0] in allgroups]))
-conditiongroups_all = list(itertools.chain(*[d.keys() for d in config["comparisons"]["libsizenorm"] if list(d.keys())[0] in allgroups and list(d.values())[0] in allgroups]))
-controlgroups = list(itertools.chain(*[d.values() for d in config["comparisons"]["libsizenorm"] if list(d.keys())[0] in validgroups and list(d.values())[0] in validgroups]))
-conditiongroups = list(itertools.chain(*[d.keys() for d in config["comparisons"]["libsizenorm"] if list(d.keys())[0] in validgroups and list(d.values())[0] in validgroups]))
+comparisons = config["comparisons"]["libsizenorm"]
+if comparisons:
+    controlgroups_all = list(itertools.chain(*[d.values() for d in comparisons if list(d.keys())[0] in allgroups and list(d.values())[0] in allgroups]))
+    conditiongroups_all = list(itertools.chain(*[d.keys() for d in comparisons if list(d.keys())[0] in allgroups and list(d.values())[0] in allgroups]))
+    controlgroups = list(itertools.chain(*[d.values() for d in comparisons if list(d.keys())[0] in validgroups and list(d.values())[0] in validgroups]))
+    conditiongroups = list(itertools.chain(*[d.keys() for d in comparisons if list(d.keys())[0] in validgroups and list(d.values())[0] in validgroups]))
 
 comparisons_si =  config["comparisons"]["spikenorm"]
 if comparisons_si:
-    controlgroups_si_all = list(itertools.chain(*[d.values() for d in config["comparisons"]["spikenorm"] if list(d.keys())[0] in allgroups_si and list(d.values())[0] in allgroups_si]))
-    conditiongroups_si_all = list(itertools.chain(*[d.keys() for d in config["comparisons"]["spikenorm"] if list(d.keys())[0] in allgroups_si and list(d.values())[0] in allgroups_si]))
-    controlgroups_si = list(itertools.chain(*[d.values() for d in config["comparisons"]["spikenorm"] if list(d.keys())[0] in validgroups_si and list(d.values())[0] in validgroups_si]))
-    conditiongroups_si = list(itertools.chain(*[d.keys() for d in config["comparisons"]["spikenorm"] if list(d.keys())[0] in validgroups_si and list(d.values())[0] in validgroups_si]))
+    controlgroups_si_all = list(itertools.chain(*[d.values() for d in comparisons_si if list(d.keys())[0] in allgroups_si and list(d.values())[0] in allgroups_si]))
+    conditiongroups_si_all = list(itertools.chain(*[d.keys() for d in comparisons_si if list(d.keys())[0] in allgroups_si and list(d.values())[0] in allgroups_si]))
+    controlgroups_si = list(itertools.chain(*[d.values() for d in comparisons_si if list(d.keys())[0] in validgroups_si and list(d.values())[0] in validgroups_si]))
+    conditiongroups_si = list(itertools.chain(*[d.keys() for d in comparisons_si if list(d.keys())[0] in validgroups_si and list(d.values())[0] in validgroups_si]))
 
 wildcard_constraints:
     sample = "|".join(re.escape(x) for x in list(SAMPLES.keys()) + ["unmatched"]),
     group = "|".join(set(re.escape(v["group"]) for k,v in CHIPS.items())),
-    control = "|".join(set(re.escape(x) for x in controlgroups + (conditiongroups_si if comparisons_si else []) + ["all"])),
-    condition = "|".join(set(re.escape(x) for x in conditiongroups + (controlgroups_si if comparisons_si else []) + ["all"])),
+    control = "|".join(set(re.escape(x) for x in (controlgroups if comparisons else []) + (controlgroups_si if comparisons_si else []) + ["all"])),
+    condition = "|".join(set(re.escape(x) for x in (conditiongroups if comparisons else []) + (conditiongroups_si if comparisons_si else []) + ["all"])),
     species = "experimental|spikein",
     read_status = "raw|cleaned|aligned|unaligned",
     figure = "|".join(re.escape(x) for x in FIGURES.keys()),
@@ -155,7 +158,7 @@ rule target:
                       control=conditioncheck(controlgroups_all)),
                factor=FACTOR,
                status=statuscheck(SAMPLES, get_samples(search_dict=SAMPLES, passing=True)),
-               windowsize=config["scatterplot_binsizes"]),
+               windowsize=config["scatterplot_binsizes"]) if comparisons else [],
         expand(expand("qual_ctrl/scatter_plots/{condition}-v-{control}/{{status}}/{condition}-v-{control}_{{factor}}_chipseq-spikenorm-scatterplots-{{status}}-window-{{windowsize}}.svg",
                       zip,
                       condition=conditioncheck(conditiongroups_si_all),
@@ -171,7 +174,7 @@ rule target:
                figure=FIGURES,
                status=statuscheck(CHIPS, get_samples(passing=True)),
                readtype=["midpoints", "protection"],
-               factor=FACTOR) if config["plot_figures"] else [],
+               factor=FACTOR) if comparisons and config["plot_figures"] else [],
         expand(expand("datavis/{{figure}}/libsizenorm/{condition}-v-{control}/{{status}}/{{readtype}}/{{factor}}-chipseq_{{figure}}-libsizenorm-{{status}}_{condition}-v-{control}_{{readtype}}-heatmap-bysample.svg",
                       zip,
                       condition=conditioncheck(conditiongroups_all),
@@ -179,7 +182,7 @@ rule target:
                figure=FIGURES,
                status=statuscheck(get_samples(paired=True), get_samples(passing=True, paired=True)),
                readtype=["midpoints-input-subtracted", "protection-input-subtracted"],
-               factor=FACTOR) if config["plot_figures"] else [],
+               factor=FACTOR) if comparisons and config["plot_figures"] else [],
         expand(expand("datavis/{{figure}}/spikenorm/{condition}-v-{control}/{{status}}/{{readtype}}/{{factor}}-chipseq_{{figure}}-spikenorm-{{status}}_{condition}-v-{control}_{{readtype}}-heatmap-bysample.svg",
                       zip,
                       condition=conditioncheck(conditiongroups_si_all),
@@ -205,7 +208,7 @@ rule target:
                annotation=list(config["differential_occupancy"]["annotations"].keys() \
                        if config["differential_occupancy"]["annotations"] else [])+["peaks"],
                direction=["all", "down", "nonsignificant", "up"],
-               factor=FACTOR),
+               factor=FACTOR) if comparisons else [],
         expand(expand("diff_binding/{{annotation}}/{condition}-v-{control}/spikenorm/{condition}-v-{control}_{{factor}}-chipseq-spikenorm-{{annotation}}-diffbind-results-{{direction}}.narrowpeak",
                        zip,
                        condition=conditiongroups_si,
