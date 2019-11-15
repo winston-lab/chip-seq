@@ -47,9 +47,10 @@ def statuscheck(dict1, dict2):
         return ["passing", "all"]
 
 def conditioncheck(conditionlist):
-    if len(conditionlist) == 0:
+    n_conditions = len(conditionlist)
+    if n_conditions == 0:
         return []
-    elif len(conditionlist) == 1:
+    elif n_conditions == 1 or n_conditions > 10:
         return conditionlist
     else:
         return conditionlist + ["all"]
