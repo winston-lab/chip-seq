@@ -98,5 +98,5 @@ compute_matrix:
 
 plot_figures:
     time: 10
-    mem: 5000
+    mem: 10000
 
