@@ -81,8 +81,8 @@ join_window_counts:
     mem: 2
 
 plot_scatter_plots:
-    time: 3
-    mem: 1200M
+    time: 5
+    mem: 2000M
 
 differential_binding:
     time: 3
@@ -97,6 +97,6 @@ compute_matrix:
     mem: 300
 
 plot_figures:
-    time: 10
-    mem: 10000
+    time: 20
+    mem: 16000
 
