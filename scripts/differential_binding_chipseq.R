@@ -177,8 +177,8 @@ plot_ma = function(df_sig = results_df_filtered_significant,
                      color="red", stroke=0, size=0.7) +
         scale_x_log10(name="mean of normalized counts") +
         scale_alpha_continuous(range = c(0.5, 1)) +
-        ylab(bquote(log[2]~frac("enrichment in " * .(condition),
-                                "enrichment in " * .(control)))) +
+        ylab(bquote(log[2]~frac("enrichment in" ~ .(condition),
+                                "enrichment in" ~ .(control)))) +
         theme_light() +
         theme(text = element_text(size=8, color="black"),
               axis.text = element_text(color = "black"),
@@ -204,8 +204,8 @@ plot_volcano = function(df = results_df_filtered,
                      binwidth = c(0.01, 0.1),
                      alpha=0.8, stroke=0, size=0.7) +
         geom_hline(yintercept = -log10(alpha), color="red", linetype="dashed") +
-        xlab(bquote(log[2] ~ frac("enrichment in " * .(condition),
-                                  "enrichment in " * .(control)))) +
+        xlab(bquote(log[2] ~ frac("enrichment in" ~ .(condition),
+                                  "enrichment in" ~ .(control)))) +
         ylab(expression(-log[10] ~ FDR)) +
         scale_color_viridis(option="inferno") +
         theme_light() +
