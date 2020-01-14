@@ -561,7 +561,7 @@ main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnst
 
         if (str_detect(readtype, "subtracted")){
             heatmap_sample = heatmap_sample +
-                facet_grid(replicate + n ~ group, scales="free_y", space="free_y")
+                facet_grid(replicate + annotation ~ group, scales="free_y", space="free_y")
             heatmap_sample %<>%
                 nest_right_facets(level=2, outer="replicate")
 
@@ -570,7 +570,7 @@ main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnst
 
         } else {
             heatmap_sample = heatmap_sample +
-                facet_grid(replicate + n ~ group + sampletype, scales="free_y", space="free_y")
+                facet_grid(replicate + annotation ~ group + sampletype, scales="free_y", space="free_y")
             heatmap_sample %<>%
                 nest_right_facets(level=2, outer="replicate") %>%
                 nest_top_facets(inner="strand", intype="gtable")
