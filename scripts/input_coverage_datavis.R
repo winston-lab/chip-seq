@@ -178,7 +178,8 @@ main = function(
                       labels=c("n/4", "n/2", "n", "2n", "4n"),
                       sec.axis=dup_axis()) +
         facet_wrap(~chrom) +
-        scale_fill_manual(values=rep(ptol_pal()(min(n_groups, 12)), ceiling(n_groups/12))) +
+        scale_fill_manual(values=rep(ptol_pal()(min(n_groups, 12)), ceiling(n_groups/12)),
+                          name=NULL) +
         theme_light() +
         theme_light() +
         theme(legend.position="bottom",
