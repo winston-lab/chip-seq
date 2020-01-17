@@ -166,6 +166,8 @@ rule target:
                factor=FACTOR,
                status=statuscheck(SISAMPLES, get_samples(search_dict=SISAMPLES, passing=True)),
                windowsize=config["scatterplot_binsizes"]) if comparisons_si else [],
+        # input_coverage_datavis
+        f"qual_ctrl/input_coverage/{FACTOR}_chipseq-input-coverage-dotplot.svg",
         #datavis
         expand(expand("datavis/{{figure}}/libsizenorm/{condition}-v-{control}/{{status}}/{{readtype}}/{{factor}}-chipseq_{{figure}}-libsizenorm-{{status}}_{condition}-v-{control}_{{readtype}}-heatmap-bysample.svg",
                       zip,

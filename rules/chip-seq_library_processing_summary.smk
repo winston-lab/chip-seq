@@ -5,6 +5,7 @@ localrules:
     plot_read_processing,
     build_spikein_counts_table,
     plot_spikein_pct,
+    input_coverage_datavis
 
 rule aggregate_read_numbers:
     input:
@@ -76,4 +77,20 @@ rule plot_spikein_pct:
         "../envs/tidyverse.yaml"
     script:
         "../scripts/spikein_abundance_chipseq.R"
+
+rule input_coverage_datavis:
+    input:
+        tsv = f"qual_ctrl/scatter_plots/{FACTOR}_chipseq_union-bedgraph-libsizenorm-midpoint-window-1000-allsamples.tsv.gz"
+    output:
+        coverage_dotplot = "qual_ctrl/input_coverage/{factor}_chipseq-input-coverage-dotplot.svg",
+        violin_facet_sample = "qual_ctrl/input_coverage/{factor}_chipseq-input-coverage-violin-facet-sample.svg",
+        violin_facet_chrom = "qual_ctrl/input_coverage/{factor}_chipseq-input-coverage-violin-facet-chrom.svg"
+    params:
+        input_samples = list(INPUTS.keys()) ,
+        input_groups = [v["group"] for k,v in INPUTS.items()],
+        haploid_quantile = 0.5
+    conda:
+        "../envs/tidyverse.yaml"
+    script:
+        "../scripts/input_coverage_datavis.R"
 
