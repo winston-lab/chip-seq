@@ -123,7 +123,8 @@ main = function(
            plot=coverage_dotplot,
            width= 16 * max_replicates,
            height= 9 * n_groups / 2,
-           units="cm")
+           units="cm",
+           limitsize=FALSE)
 
     violin_facet_sample = ggplot(data=df,
            aes(x=chrom,
@@ -159,7 +160,8 @@ main = function(
            plot=violin_facet_sample,
            width=16 * max_replicates,
            height=9 * n_groups / 3,
-           units="cm")
+           units="cm",
+           limitsize=FALSE)
 
     violin_facet_chrom = ggplot(data=df,
            aes(x=interaction(replicate, group),
@@ -195,7 +197,8 @@ main = function(
            plot=violin_facet_chrom,
            width=16*1.5,
            height=9*1.5,
-           units="cm")
+           units="cm",
+           limitsize=FALSE)
 }
 
 main(input_path = snakemake@input[["tsv"]],
