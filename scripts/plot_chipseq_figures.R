@@ -159,10 +159,11 @@ main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnst
         metagene = metagene +
             scale_y_continuous(limits = c(NA, NA), name="normalized counts",
                                labels=function(x) abs(x)) +
-            scale_color_manual(values=rep(ptol_pal()(min(n_groups, 12)), ceiling(n_groups/12)),
-                               guide=guide_legend(label.position=ifelse(groupvar %in% c("sampleanno", "groupanno"), "right", "top"),
-                                                  label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5))                   ) +
-            scale_fill_manual(values=rep(ptol_pal()(min(n_groups, 12)), ceiling(n_groups/12))) +
+            # scale_color_manual(values=rep(ptol_pal()(min(n_groups, 12)), ceiling(n_groups/12)),
+            scale_color_ptol(guide=guide_legend(label.position=ifelse(groupvar %in% c("sampleanno", "groupanno"), "right", "top"),
+                                                label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5))) +
+            # scale_fill_manual(values=rep(ptol_pal()(min(n_groups, 12)), ceiling(n_groups/12))) +
+            scale_fill_ptol() +
             ggtitle(paste(factorlabel, "ChIP-seq", readtype)) +
             theme_light() +
             theme(text = element_text(size=12, color="black", face="bold"),
