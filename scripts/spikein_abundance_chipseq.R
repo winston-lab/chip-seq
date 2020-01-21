@@ -61,8 +61,8 @@ main = function(in_path, sample_list, controls, conditions, plot_out, stats_out)
         write_tsv(path = stats_out, col_names=TRUE)
 
     #set width
-    wl = 1+1.6*n_samples
-    wr = 1+1.8*n_groups
+    wl = 1+1.8*n_samples
+    wr = 1+2*n_groups
     th = 0
     if (!(is.null(conditions) || is.null(controls))){
         levels_df = tibble(condition=conditions, control=controls) %>%
@@ -93,7 +93,12 @@ main = function(in_path, sample_list, controls, conditions, plot_out, stats_out)
                            heights=unit(c(9,th),"cm"))
 
     }
-    ggsave(plot_out, page, width = wl+wr, height=9+th+.5, units = "cm")
+    ggsave(plot_out,
+           page,
+           width = wl+wr,
+           height=9+th+.5,
+           units = "cm",
+           limitsize=FALSE)
 }
 
 main(in_path = snakemake@input[[1]],
