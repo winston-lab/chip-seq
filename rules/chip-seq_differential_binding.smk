@@ -32,7 +32,8 @@ rule combine_annotation_counts:
     shell: """
         (paste {input} | \
          cut -f$(paste -d, <(echo "1-6") <(seq -s, 7 7 {params.n})) | \
-         cat <(echo -e "chrom\tstart\tend\tname\tscore\tstrand\t{params.names}" ) - > {output}) &> {log}
+         cat <(echo -e "chrom\tstart\tend\tname\tscore\tstrand\t{params.names}") - | \
+         pigz -f > {output}) &> {log}
         """
 
 rule differential_binding:
