@@ -17,7 +17,7 @@ snakemake -p \
     --cluster-config $(grep -h annotation_workflow config.yaml | \
                         head -n 1 | \
                         awk '{print $2}' | \
-                        paste -d '' - <(echo config.yaml)) \
+                        paste -d '/' - <(echo cluster.yaml)) \
     --cluster-config cluster.yaml \
     --use-conda \
     --jobs 9999 \
