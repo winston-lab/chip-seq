@@ -38,8 +38,8 @@ rule plot_scatter_plots:
     params:
         pcount = lambda wc: 0.01*int(wc.windowsize),
         samplelist = lambda wc: list(get_samples(search_dict=SAMPLES,
-                                                 passing=(True if wc.status=="passing" else False),
-                                                 spikein=(True if wc.norm=="spikenorm" else False),
+                                                 passing=(wc.status=="passing"),
+                                                 spikein=(wc.norm=="spikenorm"),
                                                  groups=[wc.condition, wc.control]).keys())
     conda:
         "../envs/tidyverse.yaml"
