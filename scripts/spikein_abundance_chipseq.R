@@ -63,8 +63,8 @@ main = function(in_path, sample_list, controls, conditions, plot_out, stats_out)
         write_tsv(path = stats_out, col_names=TRUE)
 
     #set width
-    wl = 1+1.8*n_samples
-    wr = 1+2*n_groups
+    wl = 6+1.5*n_samples
+    wr = 2+1.5*n_groups
     th = 0
     if (!(is.null(conditions) || is.null(controls))){
         levels_df = tibble(condition=conditions, control=controls) %>%
