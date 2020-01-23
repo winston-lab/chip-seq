@@ -72,8 +72,8 @@ rule plot_figures:
         # abusing snakemake a bit here...using params as output paths since in order to use lambda functions
         annotations_out = lambda wc: ["datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/".format(**wc) + annotation + "_cluster-" + str(cluster) + ".bed" for annotation in FIGURES[wc.figure]["annotations"] for cluster in range(1, FIGURES[wc.figure]["annotations"][annotation]["n_clusters"]+1)],
         clusters_out = lambda wc: ["datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/".format(**wc) + annotation + ".pdf" for annotation in FIGURES[wc.figure]["annotations"]],
-        samplelist = lambda wc: list(get_samples(passing=(True if wc.status=="passing" else False),
-                                                 spikein=(True if wc.norm=="spikenorm" else False),
+        samplelist = lambda wc: list(get_samples(passing=(wc.status=="passing"),
+                                                 spikein=(wc.norm=="spikenorm"),
                                                  groups=[wc.condition, wc.control]).keys()),
         plottype = lambda wc: FIGURES[wc.figure]["parameters"]["type"],
         readtype = lambda wc: wc.readtype.split("-")[0] + ", input subtracted" if "subtracted" in wc.readtype else wc.readtype,
@@ -90,8 +90,8 @@ rule plot_figures:
         sortmethod = lambda wc: FIGURES[wc.figure]["parameters"]["arrange"],
         cluster_scale = lambda wc: "FALSE" if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else str(FIGURES[wc.figure]["parameters"]["cluster_scale"]).upper(),
         cluster_samples = lambda wc: [] if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else \
-                list(get_samples(passing=(True if wc.status=="passing" else False),
-                                 spikein=(True if wc.norm=="spikenorm" else False),
+                list(get_samples(passing=(wc.status=="passing"),
+                                 spikein=(wc.norm=="spikenorm"),
                                  groups=FIGURES[wc.figure]["parameters"]["cluster_conditions"]).keys()),
         cluster_five = lambda wc: [] if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else FIGURES[wc.figure]["parameters"]["cluster_five"],
         cluster_three = lambda wc: [] if FIGURES[wc.figure]["parameters"]["arrange"] != "cluster" else FIGURES[wc.figure]["parameters"]["cluster_three"],

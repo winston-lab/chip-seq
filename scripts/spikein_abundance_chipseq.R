@@ -24,7 +24,8 @@ main = function(in_path, sample_list, controls, conditions, plot_out, stats_out)
         geom_col() +
         geom_text(aes(label=round(abundance, 2)), size=12/75*25.4,
                   position=position_stack(vjust=0.9)) +
-        scale_fill_manual(values=rep(ptol_pal()(min(n_groups, 12)), ceiling(n_groups/12))) +
+        scale_fill_manual(values=rep(ptol_pal()(min(n_groups, 12)), ceiling(n_groups/12)),
+                          name=NULL) +
         ylab("spike-in normalized\nabundance vs. input") +
         theme_light() +
         theme(axis.text = element_text(size=10, color="black"),
@@ -43,7 +44,8 @@ main = function(in_path, sample_list, controls, conditions, plot_out, stats_out)
         theme(axis.text = element_text(size=10, color="black"),
               axis.text.x = element_text(angle=30, hjust=0.9),
               axis.title.x = element_blank(),
-              axis.title.y = element_text(size=10, color="black"))
+              axis.title.y = element_text(size=10, color="black"),
+              legend.position="none")
 
     stats_table = df %>%
         add_count(group, name="n") %>%
@@ -61,8 +63,8 @@ main = function(in_path, sample_list, controls, conditions, plot_out, stats_out)
         write_tsv(path = stats_out, col_names=TRUE)
 
     #set width
-    wl = 1+1.8*n_samples
-    wr = 1+2*n_groups
+    wl = 6+1.5*n_samples
+    wr = 2+1.5*n_groups
     th = 0
     if (!(is.null(conditions) || is.null(controls))){
         levels_df = tibble(condition=conditions, control=controls) %>%

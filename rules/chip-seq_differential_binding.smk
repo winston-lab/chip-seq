@@ -32,7 +32,8 @@ rule combine_annotation_counts:
     shell: """
         (paste {input} | \
          cut -f$(paste -d, <(echo "1-6") <(seq -s, 7 7 {params.n})) | \
-         cat <(echo -e "chrom\tstart\tend\tname\tscore\tstrand\t{params.names}" ) - > {output}) &> {log}
+         cat <(echo -e "chrom\tstart\tend\tname\tscore\tstrand\t{params.names}") - | \
+         pigz -f > {output}) &> {log}
         """
 
 rule differential_binding:
@@ -50,16 +51,16 @@ rule differential_binding:
     params:
         samples = lambda wc: list(get_samples(search_dict=SAMPLES,
                                               passing=True,
-                                              spikein=(True if wc.norm=="spikenorm" else False),
+                                              spikein=(wc.norm=="spikenorm"),
                                               groups=[wc.control, wc.condition]).keys()),
         conditions = lambda wc: [v["group"] for k,v in get_samples(search_dict=SAMPLES,
                                                                   passing=True,
-                                                                  spikein=(True if wc.norm=="spikenorm" else False),
+                                                                  spikein=(wc.norm=="spikenorm"),
                                                                   groups=[wc.control, wc.condition]).items()],
         sampletypes = lambda wc: [("input" if k in INPUTS else "ChIP") \
                                     for k in get_samples(search_dict=SAMPLES,
                                                          passing=True,
-                                                         spikein=(True if wc.norm=="spikenorm" else False),
+                                                         spikein=(wc.norm=="spikenorm"),
                                                          groups=[wc.control, wc.condition]).keys()],
         alpha = config["differential_occupancy"]["fdr"],
         lfc = log2(config["differential_occupancy"]["fold-change-threshold"])
@@ -72,12 +73,12 @@ rule diffbind_results_to_narrowpeak:
     input:
         condition_coverage = lambda wc: expand(f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-midpoints-input-subtracted_smoothed.bw",
                 sample=get_samples(passing=True,
-                                   spikein=(True if wc.norm=="spikenorm" else False),
+                                   spikein=(wc.norm=="spikenorm"),
                                    paired=True,
                                    groups=[wc.condition])),
         control_coverage = lambda wc: expand(f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-midpoints-input-subtracted_smoothed.bw",
                 sample=get_samples(passing=True,
-                                   spikein=(True if wc.norm=="spikenorm" else False),
+                                   spikein=(wc.norm=="spikenorm"),
                                    paired=True,
                                    groups=[wc.control])),
         diffbind_results = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-{direction}.tsv",
