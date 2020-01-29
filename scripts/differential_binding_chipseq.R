@@ -116,7 +116,7 @@ extract_deseq_results = function(dds,
         select(row,
                condition_enrichment = log2FoldChange,
                condition_enrichment_SE = lfcSE)
-    
+
     results(dds,
             alpha=alpha,
             lfcThreshold=lfc,
@@ -252,7 +252,7 @@ main = function(exp_table="depleted-v-non-depleted_allsamples-experimental-Rpb1-
                          sample_type = sample_type,
                          condition_id = condition,
                          control_id = control)
-    
+
     if (norm=="spikenorm"){
         dds_spike = initialize_dds(data_path = spike_table,
                                    samples = samples,
