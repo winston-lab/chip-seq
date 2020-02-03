@@ -1,7 +1,6 @@
 library(tidyverse)
 library(magrittr)
 library(DESeq2)
-library(ashr)
 library(gridExtra)
 
 get_countdata = function(path, samples){
@@ -103,39 +102,27 @@ extract_deseq_results = function(dds,
                                  annotations,
                                  alpha,
                                  lfc){
-    control_enrichment = lfcShrink(dds,
-                                   contrast=c(0,1,0,0),
-                                   type="ashr") %>%
-        as.data.frame() %>%
-        rownames_to_column(var="row") %>%
+    control_enrichment = results(dds,
+            contrast=c(0,1,0,0),
+            tidy=TRUE) %>%
         as_tibble() %>%
         select(row,
                control_enrichment = log2FoldChange,
                control_enrichment_SE = lfcSE)
-
-    condition_enrichment = lfcShrink(dds,
-                                     contrast=c(0,1,0,1),
-                                     type="ashr") %>%
-        as.data.frame() %>%
-        rownames_to_column(var="row") %>%
+    condition_enrichment = results(dds,
+            contrast=c(0,1,0,1),
+            tidy=TRUE) %>%
         as_tibble() %>%
         select(row,
                condition_enrichment = log2FoldChange,
                condition_enrichment_SE = lfcSE)
 
-    results = results(dds,
-                      alpha=alpha,
-                      lfcThreshold=lfc,
-                      altHypothesis="greaterAbs")
-
-    lfcShrink(dds,
-              res=results,
-              type="ashr") %>%
-        as.data.frame() %>%
-        rownames_to_column(var="row") %>%
+    results(dds,
+            alpha=alpha,
+            lfcThreshold=lfc,
+            altHypothesis="greaterAbs",
+            tidy=TRUE) %>%
         as_tibble() %>%
-        mutate(stat=results[["stat"]]) %>%
-        select(c("row", names(results))) %>%
         left_join(control_enrichment,
                   by="row") %>%
         left_join(condition_enrichment,
@@ -237,7 +224,7 @@ main = function(exp_table="depleted-v-non-depleted_allsamples-experimental-Rpb1-
                 conditions=rep(c(rep("non-depleted",4), rep("depleted",4)), 2),
                 sample_type=c(rep("input",8), rep("ChIP", 8)),
                 # batches = rep(c(rep(1,2), rep(2,2)), 4),
-                norm="libsizenorm",
+                norm="spikenorm",
                 condition="depleted",
                 control="non-depleted",
                 alpha=0.1,
