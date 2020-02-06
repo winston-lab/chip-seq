@@ -138,7 +138,7 @@ main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnst
             metagene = metagene +
                 geom_ribbon(aes(ymin=low,
                                 ymax=high),
-                            size=0, alpha=0.4) +
+                            size=0, alpha=0.2) +
             geom_line(aes(y=mid))
         } else {
             metagene = metagene +
@@ -151,7 +151,7 @@ main = function(in_path, samplelist, anno_paths, ptype, readtype, upstream, dnst
             scale_linetype_manual(values = c("dashed", "solid"),
                                   guide=guide_legend(label.position=ifelse(groupvar %in% c("sampleanno", "groupanno"), "right", "top"),
                                                      label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5))) +
-            scale_alpha_manual(values=c(0.1, 0.4),
+            scale_alpha_manual(values=c(0.05, 0.2),
                                guide=guide_legend(label.position=ifelse(groupvar %in% c("sampleanno", "groupanno"), "right", "top"),
                                                   label.hjust=ifelse(groupvar %in% c("sampleanno", "groupanno"), 0, 0.5)))
         }
