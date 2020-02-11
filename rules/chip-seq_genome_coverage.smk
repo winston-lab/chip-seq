@@ -169,19 +169,6 @@ rule ratio_coverage:
     script:
         "../scripts/chipseq_shrunken_ratio_coverage.R"
 
-# rule subtract_inputs:
-#     input:
-#         ip_sample = "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{readtype}.bedgraph",
-#         input_sample = lambda wc: f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-{wc.readtype}.bedgraph".format(sample=CHIPS[wc.sample]["control"]),
-#     output:
-#         "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{readtype}-input-subtracted.bedgraph",
-#     log:
-#         "logs/subtract_inputs/subtract_inputs-{sample}-{norm}-{readtype}-{factor}.log"
-#     shell: """
-#         (bedtools unionbedg -i {input.ip_sample} {input.input_sample} | \
-#          awk 'BEGIN{{FS=OFS="\t"}}{{print $1, $2, $3, $4-$5}}' > {output}) &> {log}
-#         """
-
 rule bedgraph_to_bigwig:
     input:
         bg = "coverage/{norm}/{sample_group}_{factor}-chipseq-{norm}-{readtype}.bedgraph",

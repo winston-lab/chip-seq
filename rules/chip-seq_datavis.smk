@@ -7,13 +7,13 @@ localrules:
 rule compute_matrix:
     input:
         annotation = lambda wc: FIGURES[wc.figure]["annotations"][wc.annotation]["path"],
-        bw = lambda wc: f"coverage/{wc.norm}/{wc.sample}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw" if wc.sampletype=="ChIP" else f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw".format(sample = CHIPS[wc.sample]["control"])
+        bw = lambda wc: f"coverage/{wc.norm}/{wc.sample_group}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw" if wc.sampletype=="ChIP" else f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-{wc.strand}.bw".format(sample = CHIPS[wc.sample_group]["control"])
     output:
-        dtfile = temp("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}.mat.gz"),
-        matrix = temp("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}.tsv"),
-        melted = temp("datavis/{figure}/{norm}/{annotation}_{sample}-{sampletype}-{norm}-{strand}-melted.tsv.gz"),
+        dtfile = temp("datavis/{figure}/{norm}/{annotation}_{sample_group}-{sampletype}-{norm}-{strand}.mat.gz"),
+        matrix = temp("datavis/{figure}/{norm}/{annotation}_{sample_group}-{sampletype}-{norm}-{strand}.tsv"),
+        melted = temp("datavis/{figure}/{norm}/{annotation}_{sample_group}-{sampletype}-{norm}-{strand}-melted.tsv.gz"),
     params:
-        group = lambda wc : SAMPLES[wc.sample]["group"],
+        group = lambda wc : wc.sample_group if "ratio" in wc.strand else SAMPLES[wc.sample_group]["group"],
         refpoint = lambda wc: "TSS" if FIGURES[wc.figure]["parameters"]["type"]=="scaled" else FIGURES[wc.figure]["parameters"]["refpoint"],
         upstream = lambda wc: FIGURES[wc.figure]["parameters"]["upstream"] + FIGURES[wc.figure]["parameters"]["binsize"],
         dnstream = lambda wc: FIGURES[wc.figure]["parameters"]["dnstream"] + FIGURES[wc.figure]["parameters"]["binsize"],
@@ -25,27 +25,23 @@ rule compute_matrix:
     threads:
         config["threads"]
     log:
-        "logs/compute_matrix/compute_matrix-{figure}_{annotation}_{sample}-{sampletype}-{norm}-{strand}.log"
+        "logs/compute_matrix/compute_matrix-{figure}_{annotation}_{sample_group}-{sampletype}-{norm}-{strand}.log"
     run:
         if FIGURES[wildcards.figure]["parameters"]["type"]=="absolute":
             shell("""(computeMatrix reference-point -R {input.annotation} -S {input.bw} --referencePoint {params.refpoint} -out {output.dtfile} --outFileNameMatrix {output.matrix} -b {params.upstream} -a {params.dnstream} {params.nan_afterend} --binSize {params.binsize} --averageTypeBins {params.binstat} -p {threads}) &> {log}""")
         else:
             shell("""(computeMatrix scale-regions -R {input.annotation} -S {input.bw} -out {output.dtfile} --outFileNameMatrix {output.matrix} -m {params.scaled_length} -b {params.upstream} -a {params.dnstream} --binSize {params.binsize} --averageTypeBins {params.binstat} -p {threads}) &> {log}""")
         melt_upstream = params.upstream-params.binsize
-        shell("""(Rscript scripts/melt_matrix_chipseq.R -i {output.matrix} -r {params.refpoint} --group {params.group} -s {wildcards.sample} -t {wildcards.sampletype} -a {params.anno_label} -b {params.binsize} -u {melt_upstream} -o {output.melted}) &>> {log}""")
+        shell("""(Rscript scripts/melt_matrix_chipseq.R -i {output.matrix} -r {params.refpoint} --group {params.group} -s {wildcards.sample_group} -t {wildcards.sampletype} -a {params.anno_label} -b {params.binsize} -u {melt_upstream} -o {output.melted}) &>> {log}""")
 
 rule cat_matrices:
     input:
         lambda wc: expand("datavis/{{figure}}/{{norm}}/{annotation}_{sample}-{sampletype}-{{norm}}-{{strand}}-melted.tsv.gz",
                           annotation=list(FIGURES[wc.figure]["annotations"].keys()),
-                          sample={"libsizenorm":
-                                    {True: get_samples(paired=True),
-                                     False: CHIPS},
-                                  "spikenorm":
-                                    {True: get_samples(spikein=True, paired=True),
-                                     False: get_samples(spikein=True)}
-                                  }.get(wc.norm).get("-input-subtracted" in wc.strand),
-                          sampletype="ChIP" if "-input-subtracted" in wc.strand else ["ChIP", "input"])
+                          sample = {True: validgroups_si if wc.norm=="spikenorm" else validgroups,
+                                    False: get_samples(spikein=(wc.norm=="spikenorm"))
+                                    }.get("ratio" in wc.strand),
+                          sampletype="ChIP" if "ratio" in wc.strand else ["ChIP", "input"])
     output:
         "datavis/{figure}/{norm}/{figure}-allsamples-allannotations-{factor}-chipseq-{norm}-{strand}.tsv.gz"
     log:
@@ -72,11 +68,13 @@ rule plot_figures:
         # abusing snakemake a bit here...using params as output paths since in order to use lambda functions
         annotations_out = lambda wc: ["datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/".format(**wc) + annotation + "_cluster-" + str(cluster) + ".bed" for annotation in FIGURES[wc.figure]["annotations"] for cluster in range(1, FIGURES[wc.figure]["annotations"][annotation]["n_clusters"]+1)],
         clusters_out = lambda wc: ["datavis/{figure}/{norm}/{condition}-v-{control}/{status}/{readtype}/".format(**wc) + annotation + ".pdf" for annotation in FIGURES[wc.figure]["annotations"]],
-        samplelist = lambda wc: list(get_samples(passing=(wc.status=="passing"),
-                                                 spikein=(wc.norm=="spikenorm"),
-                                                 groups=[wc.condition, wc.control]).keys()),
+        samplelist = lambda wc: {True: [wc.condition, wc.control],
+                                 False: list(get_samples(passing=(wc.status=="passing"),
+                                                         spikein=(wc.norm=="spikenorm"),
+                                                         groups=[wc.condition, wc.control]).keys())
+                                 }.get("ratio" in wc.readtype),
         plottype = lambda wc: FIGURES[wc.figure]["parameters"]["type"],
-        readtype = lambda wc: wc.readtype.split("-")[0] + ", input subtracted" if "subtracted" in wc.readtype else wc.readtype,
+        readtype = lambda wc: "enrichment" if "ratio" in wc.readtype else wc.readtype,
         upstream = lambda wc: FIGURES[wc.figure]["parameters"]["upstream"],
         dnstream = lambda wc: FIGURES[wc.figure]["parameters"]["dnstream"],
         scaled_length = lambda wc: 0 if FIGURES[wc.figure]["parameters"]["type"]=="absolute" else FIGURES[wc.figure]["parameters"]["scaled_length"],
