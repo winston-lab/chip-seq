@@ -2,9 +2,11 @@
 
 localrules:
     normalize_genome_coverage,
-    subtract_inputs,
+    # subtract_inputs,
     bedgraph_to_bigwig,
-    smoothed_midpoint_coverage
+    smoothed_midpoint_coverage,
+    map_counts_to_windows,
+    combine_window_counts
 
 rule crosslink_coverage:
     input:
@@ -103,27 +105,91 @@ rule normalize_genome_coverage:
                           'BEGIN{{FS=OFS="\t"}}{{$4=$4/norm_factor; print $0}}' {input.counts} > {output.normalized}) &> {log}
                   """)
 
-rule subtract_inputs:
+rule map_counts_to_windows:
     input:
-        ip_sample = "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{readtype}.bedgraph",
-        input_sample = lambda wc: f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-{wc.readtype}.bedgraph".format(sample=CHIPS[wc.sample]["control"]),
+        bedgraph = "coverage/{counttype}/{sample}_{factor}-chipseq-{counttype}-midpoints.bedgraph",
+        fasta = lambda wc: {"counts": os.path.abspath(build_annotations(config["genome"]["fasta"])),
+                            "sicounts": config["spike_in"]["fasta"]
+                            }.get(wc.counttype)
     output:
-        "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{readtype}-input-subtracted.bedgraph",
+        temp("coverage/{counttype}/{factor}_chipseq_{sample}-{counttype}-midpoints-window-{windowsize}.bedgraph")
     log:
-        "logs/subtract_inputs/subtract_inputs-{sample}-{norm}-{readtype}-{factor}.log"
+        "logs/map_to_windows/map_to_windows_{sample}-{factor}-{counttype}-{windowsize}.log"
     shell: """
-        (bedtools unionbedg -i {input.ip_sample} {input.input_sample} | \
-         awk 'BEGIN{{FS=OFS="\t"}}{{print $1, $2, $3, $4-$5}}' > {output}) &> {log}
+        (bedtools makewindows -g <(faidx {input.fasta} -i chromsizes) -w {wildcards.windowsize} | \
+         LC_COLLATE=C sort -k1,1 -k2,2n | \
+         bedtools map -a stdin -b {input.bedgraph} -c 4 -o sum > {output}) &> {log}
         """
+
+rule combine_window_counts:
+    input:
+        bedgraphs = lambda wc: expand("coverage/{{counttype}}/{{factor}}_chipseq_{sample}-{{counttype}}-midpoints-window-{{windowsize}}.bedgraph",
+                          sample=get_samples(search_dict=SAMPLES,
+                                             passing=True,
+                                             groups=[wc.group])),
+        fasta = lambda wc: {"counts": os.path.abspath(build_annotations(config["genome"]["fasta"])),
+                            "sicounts": config["spike_in"]["fasta"]
+                            }.get(wc.counttype)
+    output:
+        "coverage/ratio_coverage/{factor}_chipseq_{group}-{counttype}-midpoints-window-{windowsize}.tsv.gz"
+    params:
+        names = lambda wc: list(get_samples(search_dict=SAMPLES,
+                                            passing=True,
+                                            groups=[wc.group]).keys())
+    log:
+        "logs/join_window_counts/join_window_counts_{factor}-{group}-{counttype}-{windowsize}.log"
+    shell: """
+        (bedtools unionbedg -i {input.bedgraphs} -g <(faidx -i chromsizes {input.fasta}) -empty -header -names {params.names} | \
+            bash scripts/cleanUnionbedg.sh | \
+            pigz -f > {output}) &> {log}
+        """
+
+rule ratio_coverage:
+    input:
+        exp_table = "coverage/ratio_coverage/{factor}_chipseq_{group}-counts-midpoints-window-{windowsize}.tsv.gz",
+        spike_table = lambda wc: [] if wc.norm=="libsizenorm" else "coverage/ratio_coverage/{factor}_chipseq_{group}-sicounts-midpoints-window-{windowsize}.tsv.gz",
+    output:
+        counts_norm = "coverage/ratio_coverage/{norm}/{group}_{factor}_{norm}-ratio-coverage-counts-window-{windowsize}-sizefactornorm.tsv.gz",
+        counts_rlog = "coverage/ratio_coverage/{norm}/{group}_{factor}_{norm}-ratio-coverage-counts-window-{windowsize}-rlogtransform.tsv.gz",
+        tsv = "coverage/ratio_coverage/{norm}/{group}_{factor}_{norm}-ratio-coverage-counts-window-{windowsize}-results.tsv.gz",
+        qc_plots = "coverage/ratio_coverage/{norm}/{group}_{factor}_{norm}-ratio-coverage-counts-window-{windowsize}-qcplots.svg",
+        bedgraph = "coverage/{norm}/{group}_{factor}-chipseq-{norm}-ratio_window_{windowsize}.bedgraph",
+    params:
+        samples = lambda wc: list(get_samples(search_dict=SAMPLES,
+                                              passing=True,
+                                              spikein=(wc.norm=="spikenorm"),
+                                              groups=[wc.group]).keys()),
+        rna_sources = lambda wc: [("input" if k in INPUTS else "ChIP") \
+                for k in get_samples(search_dict=SAMPLES,
+                                     passing=True,
+                                     spikein=(wc.norm=="spikenorm"),
+                                     groups=[wc.group]).keys()],
+    conda:
+        "../envs/diff_exp.yaml"
+    script:
+        "../scripts/chipseq_shrunken_ratio_coverage.R"
+
+# rule subtract_inputs:
+#     input:
+#         ip_sample = "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{readtype}.bedgraph",
+#         input_sample = lambda wc: f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-{wc.readtype}.bedgraph".format(sample=CHIPS[wc.sample]["control"]),
+#     output:
+#         "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{readtype}-input-subtracted.bedgraph",
+#     log:
+#         "logs/subtract_inputs/subtract_inputs-{sample}-{norm}-{readtype}-{factor}.log"
+#     shell: """
+#         (bedtools unionbedg -i {input.ip_sample} {input.input_sample} | \
+#          awk 'BEGIN{{FS=OFS="\t"}}{{print $1, $2, $3, $4-$5}}' > {output}) &> {log}
+#         """
 
 rule bedgraph_to_bigwig:
     input:
-        bg = "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{readtype}.bedgraph",
+        bg = "coverage/{norm}/{sample_group}_{factor}-chipseq-{norm}-{readtype}.bedgraph",
         fasta = lambda wc: os.path.abspath(config["spike_in"]["fasta"]) if wc.norm=="sicounts" else os.path.abspath(build_annotations(config["genome"]["fasta"]))
     output:
-        "coverage/{norm}/{sample}_{factor}-chipseq-{norm}-{readtype}.bw"
+        "coverage/{norm}/{sample_group}_{factor}-chipseq-{norm}-{readtype}.bw"
     log :
-        "logs/bedgraph_to_bigwig/bedgraph_to_bigwig-{sample}-{norm}-{readtype}-{factor}.log"
+        "logs/bedgraph_to_bigwig/bedgraph_to_bigwig-{sample_group}-{norm}-{readtype}-{factor}.log"
     shell: """
         (bedGraphToBigWig {input.bg} <(faidx {input.fasta} -i chromsizes) {output}) &> {log}
         """
