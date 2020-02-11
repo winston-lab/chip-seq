@@ -82,6 +82,8 @@ comparisons:
     spikenorm:
         - depleted: non-depleted  # It's okay to have no comparisons if no spikein normalized comparisons are to be made
 
+coverage_binsize: 20
+
 # [INT] binsizes for scatterplots
 scatterplot_binsizes:
     - 200
