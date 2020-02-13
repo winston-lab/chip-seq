@@ -3,9 +3,7 @@ channels:
     - conda-forge
     - bioconda
 dependencies:
-    - pandas=0.23.4
-    - numpy=1.15.4
-    - scipy=1.1.0
-    - pybigwig=0.3.12
-    - gawk=4.2.1
+    - pandas=1.0.1
+    - numpy=1.18.1
+    - pybigwig=0.3.17
 

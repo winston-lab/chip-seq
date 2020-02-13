@@ -69,27 +69,27 @@ rule differential_binding:
     script:
         "../scripts/differential_binding_chipseq.R"
 
-# rule diffbind_results_to_narrowpeak:
-#     input:
-#         condition_coverage = lambda wc: expand(f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-midpoints-input-subtracted_smoothed.bw",
-#                 sample=get_samples(passing=True,
-#                                    spikein=(wc.norm=="spikenorm"),
-#                                    paired=True,
-#                                    groups=[wc.condition])),
-#         control_coverage = lambda wc: expand(f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-midpoints-input-subtracted_smoothed.bw",
-#                 sample=get_samples(passing=True,
-#                                    spikein=(wc.norm=="spikenorm"),
-#                                    paired=True,
-#                                    groups=[wc.control])),
-#         diffbind_results = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-{direction}.tsv",
-#     output:
-#         narrowpeak = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-{direction}.narrowpeak",
-#         summit_bed = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-{direction}-summits.bed",
-#     conda:
-#         "../envs/diffbind_to_narrowpeak.yaml"
-#     log:
-#         "logs/diffbind_results_to_narrowpeak/diffbind_results_to_narrowpeak-{condition}-v-{control}_{annotation}-{norm}-{direction}-{factor}.log"
-#     shell: """
-#         (python scripts/chipseq_diffbind_results_to_narrowpeak.py -i {input.condition_coverage} -j {input.control_coverage} -d {input.diffbind_results} -n {output.narrowpeak} -b {output.summit_bed}) &> {log}
-#         """
+rule diffbind_results_to_narrowpeak:
+    input:
+        condition_coverage = lambda wc: expand(f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-ratio.bw",
+                sample=get_samples(passing=True,
+                                   spikein=(wc.norm=="spikenorm"),
+                                   paired=True,
+                                   groups=[wc.condition])),
+        control_coverage = lambda wc: expand(f"coverage/{wc.norm}/{{sample}}_{FACTOR}-chipseq-{wc.norm}-ratio.bw",
+                sample=get_samples(passing=True,
+                                   spikein=(wc.norm=="spikenorm"),
+                                   paired=True,
+                                   groups=[wc.control])),
+        diffbind_results = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-{direction}.tsv",
+    output:
+        narrowpeak = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-{direction}.narrowpeak",
+        summit_bed = "diff_binding/{annotation}/{condition}-v-{control}/{norm}/{condition}-v-{control}_{factor}-chipseq-{norm}-{annotation}-diffbind-results-{direction}-summits.bed",
+    conda:
+        "../envs/diffbind_to_narrowpeak.yaml"
+    log:
+        "logs/diffbind_results_to_narrowpeak/diffbind_results_to_narrowpeak-{condition}-v-{control}_{annotation}-{norm}-{direction}-{factor}.log"
+    shell: """
+        (python scripts/chipseq_diffbind_results_to_narrowpeak.py -i {input.condition_coverage} -j {input.control_coverage} -d {input.diffbind_results} -n {output.narrowpeak} -b {output.summit_bed}) &> {log}
+        """
 
