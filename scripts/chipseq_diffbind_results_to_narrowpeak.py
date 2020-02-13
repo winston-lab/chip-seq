@@ -74,8 +74,9 @@ def main(condition_paths,
     #NOTE: we convert NAs (found in pvalue and score columns) to zero for narrowpeak compatibility
     diffexp_df.to_csv(narrowpeak_out,
                       sep="\t",
-                      columns=['chrom', 'start', 'end', 'name', 'score', 'strand',
-                               'log2FC_enrichment', 'log10_pval', 'log10_padj', 'summit'],
+                      columns=(['chrom', 'start', 'end', 'name', 'score', 'strand',
+                               'log2FC_enrichment', 'log10_pval', 'log10_padj', 'summit'] if
+                               diffexp_df.shape[0] > 0 else []),
                       header=False,
                       index=False,
                       float_format="%.3f",
@@ -83,7 +84,8 @@ def main(condition_paths,
                       na_rep="0")
     diffexp_df.to_csv(bed_out,
                       sep="\t",
-                      columns=['chrom', 'summit_start', 'summit_end', 'name', 'score', 'strand'],
+                      columns=(['chrom', 'summit_start', 'summit_end', 'name', 'score', 'strand'] if
+                          diffexp_df.shape[0] > 0 else []),
                       header=False,
                       index=False,
                       float_format="%.3f",
