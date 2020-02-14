@@ -4,6 +4,7 @@ localrules:
     normalize_genome_coverage,
     bedgraph_to_bigwig,
     smoothed_midpoint_coverage,
+    ratio_coverage
 
 rule crosslink_coverage:
     input:

@@ -100,8 +100,3 @@ plot_figures:
     time: 20
     mem: 16000
 
-ratio_coverage:
-    time: 30
-    mem: 10000
-
-
