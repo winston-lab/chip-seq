@@ -12,7 +12,6 @@ genome:
 
 spike_in:
     name: Spom
-    proportion: 0.1
     fasta: /n/groups/winston/jc459/spt5/genome/S_pombe.ASM294v2.fa
     # transcript_annotation: ../genome/annotations/S_pombe_alltranscripts-adjustedTSS.bed
 
