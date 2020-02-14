@@ -114,6 +114,9 @@ differential_occupancy:
     annotations:  # paths to BED format annotation files of regions to test differential occupancy, in addition to called peaks
         verified-coding-genes: ../genome/steinmetz_scer_verified_coding_genes.bed
 
+shifts:
+    nonoverlapping-coding-genes: /n/groups/winston/jc459/intragenic/genome/annotations/Scer_transcripts_w_verifiedORFs-nonoverlapping.bed
+
 # data visualization settings
 plot_figures: True  # [True|False] plot heatmaps and metagenes?
 figures:

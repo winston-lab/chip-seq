@@ -9,6 +9,7 @@ qual_ctrl/
 datavis/
 peakcalling/
 diff_binding/
+shifts/
 scripts/.snakemake*
 snakemake.err
 snakemake.log

@@ -2,11 +2,8 @@
 
 localrules:
     normalize_genome_coverage,
-    # subtract_inputs,
     bedgraph_to_bigwig,
     smoothed_midpoint_coverage,
-    # map_counts_to_windows,
-    # combine_window_counts
 
 rule crosslink_coverage:
     input:
