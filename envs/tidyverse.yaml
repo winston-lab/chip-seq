@@ -4,6 +4,7 @@ channels:
     - bioconda
 dependencies:
     - r-tidyverse=1.2.1
+    - r-ggplot2=3.2.1
     - r-viridis=0.5.1
     - r-ggthemes=4.0.1
     - r-broom=0.5.0
