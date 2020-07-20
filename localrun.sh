@@ -6,4 +6,5 @@ snakemake -pr \
             <(snakemake --lp --rerun-incomplete) | sort -u` \
     --rerun-incomplete \
     --use-conda \
+    --conda-prefix ../conda \
     --cores
