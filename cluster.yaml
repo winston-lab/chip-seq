@@ -8,7 +8,8 @@ __default__ :
     err : "logs/cluster/{rule}.{wildcards}.err"
 
 fastqc_pre_and_unaligned:
-    time : 15
+    # time : 15
+    time : 30
     n : 2
     mem : 200
 
@@ -18,14 +19,14 @@ fastqc_aligned:
     mem : 200
 
 plot_fastqc_summary:
-    time: 4
+    time: 8
     n: 1
-    mem: 2G
+    mem: 4G
 
 clean_reads:
     time: 15
     n: 4
-    mem: 150
+    mem: 1G
 
 align:
     time : 25
@@ -33,7 +34,7 @@ align:
     mem : 1000
 
 bam_separate_species:
-    time: 4
+    time: 6
     mem: 50
 
 crosslink_coverage:
@@ -81,7 +82,7 @@ join_window_counts:
     mem: 2
 
 plot_scatter_plots:
-    time: 5
+    time: 10
     mem: 2000M
 
 differential_binding:
@@ -97,6 +98,6 @@ compute_matrix:
     mem: 300
 
 plot_figures:
-    time: 20
-    mem: 16000
+    time: 45
+    mem: 30000
 
