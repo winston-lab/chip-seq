@@ -85,7 +85,7 @@ wildcard_constraints:
     species = "experimental|spikein",
     read_status = "raw|cleaned|aligned|unaligned",
     figure = "|".join(re.escape(x) for x in FIGURES.keys()),
-    annotation = "|".join(re.escape(x) for x in set(list(itertools.chain(*[FIGURES[figure]["annotations"].keys() for figure in FIGURES])) + list(config["differential_occupancy"]["annotations"].keys() if config["differential_occupancy"]["annotations"] else []) + list(config["shifts"].keys() if config["shifts"] else []) + ["peaks"])),
+    annotation = "|".join(re.escape(x) for x in set(list(itertools.chain(*[FIGURES[figure]["annotations"].keys() for figure in FIGURES])) + list(config["differential_occupancy"]["annotations"].keys() if config["differential_occupancy"]["annotations"] else []) + ["peaks"])),
     status = "all|passing",
     counttype= "counts|sicounts",
     norm = "counts|sicounts|libsizenorm|spikenorm",
@@ -103,7 +103,6 @@ include: "rules/chip-seq_genome_coverage.smk"
 include: "rules/chip-seq_sample_similarity.smk"
 include: "rules/chip-seq_datavis.smk"
 include: "rules/chip-seq_differential_binding.smk"
-include: "rules/chip-seq_shifts.smk"
 
 onsuccess:
     shell("(./mogrify.sh) > mogrify.log")
@@ -196,17 +195,4 @@ rule target:
                        if config["differential_occupancy"]["annotations"] else [])+["peaks"],
                direction=["all", "down", "nonsignificant", "up"],
                factor=FACTOR) if comparisons_si else [],
-        expand(expand("shifts/{{annotation}}/{condition}-v-{control}/{condition}-v-{control}_{{factor}}-chipseq-{{annotation}}-shifts.tsv",
-                      zip,
-                      condition=conditiongroups,
-                      control=controlgroups),
-                annotation=list(config["shifts"].keys() if config["shifts"] else []),
-                factor=FACTOR) if comparisons else [],
-        expand(expand("shifts/{{annotation}}/{condition}-v-{control}/{condition}-v-{control}_{{factor}}-chipseq-{{annotation}}-shifts.tsv",
-                      zip,
-                      condition=conditiongroups_si,
-                      control=controlgroups_si),
-                annotation=list(config["shifts"].keys() if config["shifts"] else []),
-                factor=FACTOR) if comparisons_si else [],
-
 
